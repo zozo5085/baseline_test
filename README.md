@@ -157,11 +157,13 @@ Please cite our paper if you use our code in your research:
   year={2024}
 }
 
-@article{wang2024reclip++,
+@article{wang2025reclip++,
   title={ReCLIP++: Learn to Rectify the Bias of CLIP for Unsupervised Semantic Segmentation},
   author={Wang, Jingyun and Kang, Guoliang},
-  journal={arXiv preprint arXiv:2408.06747},
-  year={2024}
+  journal={International Journal of Computer Vision},
+  pages={1--23},
+  year={2025},
+  publisher={Springer}
 }
 ```
 
