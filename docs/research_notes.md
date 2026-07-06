@@ -337,7 +337,7 @@ E. L6 + L9 + L12 DFF2d full fusion
 
 | Variant | mIoU | SAVE_DIR | Date | Note |
 |---|---|---|---|---|
-| A. ReCLIP++ local baseline | 0.8451 | experiments/voc_reclippp_baseline/ | 2026-07-05 | reproduction of paper baseline |
+| A. ReCLIP++ local baseline | 0.8451 | experiments/reproduce/voc_reclippp_baseline/ | 2026-07-05 | reproduction of paper baseline |
 | B. L12 only | not run | — | — | — |
 | C. L9 + L12 selective fusion | **0.4125** | experiments/voc_l9l12_selective/ | 2026-07-06 | 50 epochs; test cfg GAMMA9 0.20, GATE_TEMP 10.0; result from console (log file was not appended). 8/21 classes have IoU exactly 0. |
 | D. L6 + L12 selective fusion | not run (queued) | experiments/voc_l6l12_selective/ | — | ON HOLD pending C failure diagnosis |
@@ -360,6 +360,35 @@ avg: 0.4125 (1448/1449 images)
 override vs learned gamma, fusion path clobbering the projected features, or a
 train/test config mismatch). Diagnose before launching D — D would likely reproduce
 the same failure. Hypotheses unverified as of this entry.
+
+### Failure diagnosis of C (2026-07-07, in progress)
+
+Diagnostic run 1 — same C checkpoint, `--fusion_gamma9 0.0` (fusion additive term
+zeroed): **mIoU 0.4070**, same zero-class signature. Log:
+`experiments/voc_l9l12_selective/test_gamma0_console.log`.
+Conclusion: the additive fusion term is NOT the culprit; failure persists with zero
+fusion content.
+
+Code finding: with fusion enabled, `forward` replaces the raw ViT value features `v`
+with `apply_safe_layer_fusion(...)` output (model_feature_fusion.py:544-545), which is
+`normalize_feature_map(f12)` even at gamma=0 — channel-wise standardization + L2 norm
+(model_feature_fusion.py:19-24) — before feeding the FROZEN CLIP-initialized
+`self.proj` (model_feature_fusion.py:549). `proj` expects raw CLIP feature statistics;
+destroying channel means/scales before it plausibly breaks text alignment for many
+classes (the exact-zero-IoU signature). Prime suspect.
+
+Diagnostic runs 2/3 (launched 2026-07-07, results pending):
+- A. baseline checkpoint + `l12_only` (normalize path only, zero fusion content),
+  cfg `config/voc_test_diag_l12only_baselineckpt_cfg.yaml`,
+  SAVE_DIR `experiments/diag_l12only_baselineckpt/`.
+- B. baseline checkpoint + FEATURE_FUSION.ENABLE=False (raw `v`, module parity check),
+  cfg `config/voc_test_diag_fusionoff_baselineckpt_cfg.yaml`,
+  SAVE_DIR `experiments/diag_fusionoff_baselineckpt/`.
+
+Expected readout: A collapses to ~0.41 while B stays ~0.845 → normalization/replacement
+path confirmed as root cause; fix = feed `proj` un-standardized features (fuse in raw
+feature space, or blend then restore f12 statistics). Both ~0.845 → training-time
+corruption instead. Both ~0.41 → parity bug elsewhere in model_feature_fusion.
 
 Stage 2: boundary confusion
 
