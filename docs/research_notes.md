@@ -440,10 +440,33 @@ sigma_r=1.5, structure_classes=(4,8,10)). The source's attribute-residual stage
 (chair/diningtable hack, 862:1358-1615) is EXCLUDED — its 0.8564 reference number
 included that stage.
 
-Known VOC-bias risks pending the generalization review (2026-07-07, agent running):
-absolute `sfp_topk=800` (not resolution-relative), hard-coded VOC class indices
-`structure_classes=(4,8,10)`, all thresholds tuned on VOC. Target: gains must hold on
-Context / COCO-Stuff / ADE20K / Cityscapes (user requirement, Stage 3).
+Generalization review completed 2026-07-07 — full report:
+`docs/othermodel_guide/sfp_dtlr_generalization_review.md`. Key findings:
+- BLOCKER-level insight: at VOC eval the token grid is ~588 tokens < sfp_topk=800, so
+  the top-k selection NEVER binds — SFP degenerates to "smooth every token with
+  max-softmax < 0.97". Behavior flips qualitatively on datasets yielding > 800 tokens
+  (e.g., Cityscapes 2048-wide). topk must become a token-count fraction.
+- PG-CP-SFP verdict: transferable-with-parameterization (topk→fraction; conf_thd is
+  class-count-sensitive — 171 COCO-Stuff classes would flag nearly all tokens;
+  proxy_lambda=2.0 extrapolates past the proxy, should be ≤ 1; the 5x5 averaging
+  erases thin structures unless boundary-gated).
+- SP-DTLR verdict: transferable-with-parameterization, verging VOC-biased
+  (sigma_s=70 ≈ global at a ~30-wide token grid, must be grid-relative;
+  dtlr_beta=1.20 > 1 overshoots; structure_classes=(4,8,10) = hardcoded VOC
+  bottle/chair/table indices — must be removed or made dataset-config).
+- Porting caveat: in the source, SFP ran during TRAINING too (checkpoint co-adapted);
+  our +0.0087 was measured as pure test-time add-on anyway, but sfp_logit_beta=0.55
+  need not be optimal for our baseline — worth a small sweep.
+- Clean list verified: divisions guarded, softmax dims correct, no NaN paths;
+  the excluded attribute-residual stage is confirmed the most VOC-biased component.
+
+Cross-dataset evaluation constraint (checked 2026-07-07): data/ holds only VOCdevkit
+images; ade/cityscapes/coco/context have pseudo-label JSONs only — no images, and
+text/ has only voc_ViT16_clip_text.pth. Stage 3 needs dataset downloads + per-dataset
+text embeddings + per-dataset trained baselines before any transfer test can run.
+Cheapest intermediate check: a parameterized (dataset-relative) SFP+DTLR variant that
+keeps VOC ≥ 0.85, plus the review's suggested 3-image before/after visual dump once
+any second dataset is available.
 
 Stage 2: boundary confusion
 
