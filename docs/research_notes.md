@@ -429,7 +429,16 @@ on baseline ckpt = 0.8451 exactly); l9l12 retrain (v2 configs, SAVE_DIR
 | Variant | mIoU | Delta vs baseline | Date | Evidence |
 |---|---|---|---|---|
 | baseline (model.model) | 0.8451 | — | 2026-07-07 re-verified | experiments/diag_baseline_modelmodel_console.log |
-| + PG-CP-SFP + SP-DTLR (`model.model_sfp_dtlr`) | **0.8538** | **+0.0087** | 2026-07-07 | experiments/voc_sfp_dtlr_eval/smoke_console.log (full 1448/1449; refinement executed once per image, 1449/1449) |
+| + PG-CP-SFP + SP-DTLR legacy profile (`model.model_sfp_dtlr`) | **0.8538** | **+0.0087** | 2026-07-07 | experiments/voc_sfp_dtlr_eval/smoke_console.log (full 1448/1449; refinement executed once per image, 1449/1449); reproduced exactly after parameterization refactor (legacy_repro_console.log) |
+| + SFP+DTLR generalization profile (TOP_FRACTION 0.75, SIGMA_S_REL 2.3, DTLR_BETA 1.0, PROXY_LAMBDA 1.0, STRUCTURE_CLASSES []) | **0.8520** | **+0.0069** | 2026-07-07 | experiments/voc_sfp_dtlr_gen_eval/gen_console.log (full 1448/1449) |
+
+Parameterization (2026-07-07): all SFP/DTLR constants moved to a `MODEL.SFP_DTLR`
+config block (config/configs.py:41-56; defaults = legacy verbatim values, so configs
+without the block are behavior-identical — verified by exact 0.8538 reproduction).
+Generalization profile removes every VOC-specific device flagged by the review
+(fractional top-k, grid-relative sigma_s, no overshoot, no extrapolation, no VOC class
+indices) and keeps +0.0069 over baseline on VOC — the gain does NOT depend on the
+VOC-tuned hacks. Cross-dataset transfer still unproven until Stage 3 data exists.
 
 Port notes: new module `model/model_sfp_dtlr.py` wraps model.model's RECLIPPP
 (checkpoint loads with 0 missing / 0 unexpected keys; zero new parameters; model.model

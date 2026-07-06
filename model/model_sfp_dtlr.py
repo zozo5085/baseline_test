@@ -43,6 +43,10 @@ from model.model import RECLIPPP as _BaseRECLIPPP
 from model.model import ReCLIP  # re-exported: load_model_classes(module) expects it
 
 
+def _cfg_get(obj, name, default):
+    return getattr(obj, name, default) if obj is not None else default
+
+
 class DomainTransformRecursiveFilter(nn.Module):
     """
     Domain-transform recursive edge-preserving filter.
@@ -163,13 +167,26 @@ class RECLIPPP(_BaseRECLIPPP):
     def __init__(self, cfg, clip_model, rank):
         super().__init__(cfg, clip_model, rank)
 
+        # --- MODEL.SFP_DTLR config block (config/configs.py) ---
+        # Defensive lookup so a config WITHOUT the SFP_DTLR block still works
+        # and is numerically identical to the legacy (VOC-tuned) behavior --
+        # every default below is the verbatim value this file used to
+        # hard-code. See docs/othermodel_guide/sfp_dtlr_generalization_review.md
+        # for why TOP_FRACTION / DTLR_SIGMA_S_REL / DTLR_STRUCTURE_CLASSES
+        # exist as dataset-relative overrides.
+        sfp_cfg = _cfg_get(cfg.MODEL, "SFP_DTLR", None)
+
         # --- CP-SFP / PG-CP-SFP settings (source 862:615-623) ---
         self.sfp_enable = True
-        self.sfp_topk = 800
+        self.sfp_topk = int(_cfg_get(sfp_cfg, "TOPK", 800))
+        # TOP_FRACTION > 0 replaces the absolute TOPK cap with
+        # k = ceil(TOP_FRACTION * valid_token_count), making selectivity
+        # resolution-invariant (review finding F1).
+        self.sfp_top_fraction = float(_cfg_get(sfp_cfg, "TOP_FRACTION", -1.0))
         self.sfp_min_score = -1e9
-        self.sfp_logit_beta = 0.55
-        self.sfp_conf_thd = 0.97
-        self.sfp_conf_scale = 10.0
+        self.sfp_logit_beta = float(_cfg_get(sfp_cfg, "LOGIT_BETA", 0.55))
+        self.sfp_conf_thd = float(_cfg_get(sfp_cfg, "CONF_THD", 0.97))
+        self.sfp_conf_scale = float(_cfg_get(sfp_cfg, "CONF_SCALE", 10.0))
 
         # Margin-aware SFP selection (source 862:625-632) -- left at the
         # shipped 862 defaults (disabled; ranking-only if ever enabled).
@@ -185,22 +202,31 @@ class RECLIPPP(_BaseRECLIPPP):
 
         # Proxy-Guided CP-SFP (source 862:646-650).
         self.sfp_proxy_enable = True
-        self.sfp_proxy_lambda = 2.00
-        self.sfp_proxy_conf_thd = 0.95
-        self.sfp_proxy_kernel = 5
+        self.sfp_proxy_lambda = float(_cfg_get(sfp_cfg, "PROXY_LAMBDA", 2.00))
+        self.sfp_proxy_conf_thd = float(_cfg_get(sfp_cfg, "PROXY_CONF_THD", 0.95))
+        self.sfp_proxy_kernel = int(_cfg_get(sfp_cfg, "PROXY_KERNEL", 5))
 
         # SFP-selected Domain-Transform Logit Refinement (source 862:661-668).
         self.sfp_dtlr_enable = True
-        self.sfp_dtlr_beta = 1.20
-        self.sfp_dtlr_sigma_s = 70.0
-        self.sfp_dtlr_sigma_r = 1.50
-        self.sfp_dtlr_num_iter = 1
+        self.sfp_dtlr_beta = float(_cfg_get(sfp_cfg, "DTLR_BETA", 1.20))
+        self.sfp_dtlr_sigma_s = float(_cfg_get(sfp_cfg, "DTLR_SIGMA_S", 70.0))
+        # DTLR_SIGMA_S_REL > 0 replaces the absolute sigma_s with
+        # sigma_s = DTLR_SIGMA_S_REL * token_grid_width (review finding F6).
+        self.sfp_dtlr_sigma_s_rel = float(_cfg_get(sfp_cfg, "DTLR_SIGMA_S_REL", -1.0))
+        self.sfp_dtlr_sigma_r = float(_cfg_get(sfp_cfg, "DTLR_SIGMA_R", 1.50))
+        self.sfp_dtlr_num_iter = int(_cfg_get(sfp_cfg, "DTLR_NUM_ITER", 1))
         self.sfp_dtlr_boundary_only = False
 
         # Structure-preserving DTLR protection (source 862:670-690).
         self.sfp_dtlr_structure_protect_enable = True
-        self.sfp_dtlr_structure_gain_thd = 0.00
-        self.sfp_dtlr_structure_classes = (4, 8, 10)  # bottle, chair, diningtable
+        self.sfp_dtlr_structure_gain_thd = float(
+            _cfg_get(sfp_cfg, "DTLR_STRUCTURE_GAIN_THD", 0.00)
+        )
+        # bottle, chair, diningtable (VOC indices) by default; empty list
+        # disables structure protection (structure_mask stays all-False).
+        self.sfp_dtlr_structure_classes = tuple(
+            _cfg_get(sfp_cfg, "DTLR_STRUCTURE_CLASSES", [4, 8, 10])
+        )
         self.sfp_dtlr_class_beta_enable = False
         self.sfp_dtlr_class_beta_classes = (4, 8, 10)
         self.sfp_dtlr_class_beta_scale = 0.75
@@ -354,7 +380,12 @@ class RECLIPPP(_BaseRECLIPPP):
                 if not valid.any():
                     continue
 
-                k = min(int(self.sfp_topk), int(valid.sum().item()))
+                valid_count = int(valid.sum().item())
+                top_fraction = float(getattr(self, "sfp_top_fraction", -1.0))
+                if top_fraction > 0:
+                    k = min(valid_count, int(math.ceil(top_fraction * valid_count)))
+                else:
+                    k = min(int(self.sfp_topk), valid_count)
                 score_b = rank_score[b].masked_fill(~valid, float("-inf"))
                 topk_idx = torch.topk(score_b, k=k, dim=0).indices
                 outlier_flat[b, topk_idx] = True
@@ -516,7 +547,14 @@ class RECLIPPP(_BaseRECLIPPP):
             return output
 
         # Keep parameters editable from __init__ without rebuilding the module.
-        self.sfp_dtlr_filter.sigma_s = float(getattr(self, "sfp_dtlr_sigma_s", 30.0))
+        sigma_s_rel = float(getattr(self, "sfp_dtlr_sigma_s_rel", -1.0))
+        if sigma_s_rel > 0:
+            # Grid-relative sigma_s (review finding F6): scales with the
+            # token grid width instead of drifting as an absolute constant.
+            sigma_s = sigma_s_rel * float(W)
+        else:
+            sigma_s = float(getattr(self, "sfp_dtlr_sigma_s", 30.0))
+        self.sfp_dtlr_filter.sigma_s = sigma_s
         self.sfp_dtlr_filter.sigma_r = float(getattr(self, "sfp_dtlr_sigma_r", 0.30))
         self.sfp_dtlr_filter.num_iterations = int(getattr(self, "sfp_dtlr_num_iter", 1))
 

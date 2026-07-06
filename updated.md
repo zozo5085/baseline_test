@@ -2,6 +2,16 @@
 
 > 使用者慣例:每次重大改版在此記錄「改了什麼、為什麼、結果」。最新在上。
 
+## 2026-07-07(晚)— SFP+DTLR 參數化:去 VOC 化後仍 +0.0069(0.8520)
+
+**做了什麼**
+- 所有 SFP/DTLR 常數移入 `MODEL.SFP_DTLR` config 區塊(configs.py:41-56,預設 =
+  舊逐字值)。legacy 驗收:**0.8538 完全重現**(參數化零行為改變)。
+- generalization profile(`config/voc_test_sfp_dtlr_gen_cfg.yaml`):top-k 改比例
+  0.75、sigma_s 改網格相對 2.3、beta 1.0、proxy_lambda 1.0、VOC 類別索引清空 —
+  審查點名的 VOC 特化全數移除 → VOC **0.8520(+0.0069)**。
+- 結論:增益不依賴 VOC hack,跨資料集移轉有基本面;實測仍待 Stage 3 資料集下載。
+
 ## 2026-07-07(晚)— SFP+DTLR 移植成功:VOC mIoU 0.8538(+0.0087,免重訓)
 
 **做了什麼**
