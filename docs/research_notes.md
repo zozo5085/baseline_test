@@ -339,8 +339,9 @@ E. L6 + L9 + L12 DFF2d full fusion
 |---|---|---|---|---|
 | A. ReCLIP++ local baseline | 0.8451 | experiments/reproduce/voc_reclippp_baseline/ | 2026-07-05 | reproduction of paper baseline |
 | B. L12 only | not run | — | — | — |
-| C. L9 + L12 selective fusion | **0.4125** | experiments/voc_l9l12_selective/ | 2026-07-06 | 50 epochs; test cfg GAMMA9 0.20, GATE_TEMP 10.0; result from console (log file was not appended). 8/21 classes have IoU exactly 0. |
-| D. L6 + L12 selective fusion | not run (queued) | experiments/voc_l6l12_selective/ | — | ON HOLD pending C failure diagnosis |
+| C. L9 + L12 selective fusion (v1, VOID) | ~~0.4125~~ | experiments/voc_l9l12_selective/ | 2026-07-06 | VOID — trained/tested under the parity-bug module (see diagnosis below) |
+| C. L9 + L12 selective fusion v2 (fixed module) | **0.6897** | experiments/voc_l9l12_selective_v2/ | 2026-07-07 | 50 epochs, gamma9=0.20 fixed; clean identity-verified module; queue log E01_test_l9l12_v2_20260707_035911.log. GENUINE negative result — see "Fusion line verdict" below. |
+| D. L6 + L12 selective fusion | CANCELLED (recommended) | — | — | same fixed-gamma training design as C v2; expected to reproduce C's failure mode |
 | E. L6 + L9 + L12 DFF2d full fusion | 0.4151 | — | 2026-07-05 | known failure (see §5) |
 
 Per-class IoU for C (verbatim, 21 values, class-name mapping unverified):
@@ -423,6 +424,29 @@ checkpoint TRAINED) under the broken module — both numbers are void as evidenc
 fusion. Fusion math reworked 2026-07-07 (gamma=0 = exact identity, verified: l12_only
 on baseline ckpt = 0.8451 exactly); l9l12 retrain (v2 configs, SAVE_DIR
 `experiments/voc_l9l12_selective_v2/`) pending user launch.
+
+### Fusion line verdict (2026-07-07, closed)
+
+Evidence chain on the FIXED module (gamma=0 = exact identity, parity verified):
+
+| Experiment | mIoU | Meaning |
+|---|---|---|
+| C v2 in-training eval (best epoch) | ~0.8034 | looked healthy during training |
+| C v2 formal test, gamma9=0.20 (E01) | 0.6897 | −0.1554 vs baseline; broad per-class degradation, not the old zero-class bug signature |
+| C v2 checkpoint, test with gamma9=0 | 0.6773 | fusion term OFF is no better → damage lives in the TRAINED WEIGHTS (prompt/pe_proj/decoder co-adapted to fused features in a way that hurts the formal whole-image + rectification test pipeline) |
+| baseline ckpt, TEST-TIME-ONLY fusion gamma9=0.05 | 0.8455 | +0.0004 — noise-level |
+| baseline ckpt, test-time-only gamma9=0.10 | 0.8431 | −0.0020 |
+| baseline ckpt, test-time-only gamma9=0.20 | 0.8378 | −0.0073, monotone decline |
+
+Conclusion: the L9 residual carries no exploitable test-time signal (monotone decline
+with gamma, break-even only at gamma→0), AND training with a fixed gamma actively
+damages the learned parameters relative to the formal test pipeline (train-eval 0.80
+vs test 0.69, while baseline goes the other way: 0.7966 train-eval → 0.8451 test).
+The uncertainty-gated selective L9/L12 fusion line is CLOSED as a genuine, cleanly
+measured negative result (usable as an ablation row in the paper). D (L6+L12) is
+recommended cancelled — same design, no reason to expect a different outcome.
+Remaining active improvement lines: test-time refinement (below, already +0.0087)
+and CBR/IABR rectification redesign (research_notes section 15).
 
 ### Test-time refinement track (no retraining, E1 from RECOMMENDATIONS.md)
 
