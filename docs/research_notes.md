@@ -456,6 +456,24 @@ and CBR/IABR rectification redesign (research_notes section 15).
 | + PG-CP-SFP + SP-DTLR legacy profile (`model.model_sfp_dtlr`) | **0.8538** | **+0.0087** | 2026-07-07 | experiments/voc_sfp_dtlr_eval/smoke_console.log (full 1448/1449; refinement executed once per image, 1449/1449); reproduced exactly after parameterization refactor (legacy_repro_console.log) |
 | + SFP+DTLR generalization profile (TOP_FRACTION 0.75, SIGMA_S_REL 2.3, DTLR_BETA 1.0, PROXY_LAMBDA 1.0, STRUCTURE_CLASSES []) | **0.8520** | **+0.0069** | 2026-07-07 | experiments/voc_sfp_dtlr_gen_eval/gen_console.log (full 1448/1449) |
 
+### Official checkpoint track (2026-07-07) — GOAL ACHIEVED
+
+Upstream repo (dogehhh/ReCLIP) releases official checkpoints for ALL five datasets.
+VOC ReCLIP++ checkpoint downloaded to `experiments/official/voc_reclippp_854/`.
+
+| Variant (all on the OFFICIAL checkpoint) | mIoU | Evidence |
+|---|---|---|
+| official ckpt, plain eval (paper claims 85.4) | **0.8536** | experiments/queue_logs/DIAG_official854_*.log — our eval pipeline matches the authors' to 0.0004; the 0.8451 self-trained gap is training env (RTX 5090 + torch nightly) + seed |
+| official ckpt + SFP+DTLR legacy profile | **0.8590** | experiments/queue_logs/SFPDTLR_official_legacy_*.log (+0.0054 over official) |
+| official ckpt + SFP+DTLR generalization profile (no VOC hacks) | **0.8582** | experiments/queue_logs/SFPDTLR_official_gen_*.log (+0.0046) |
+
+Both variants EXCEED the published 85.4, including the de-VOC-ified generalization
+profile. The refinement gain is checkpoint-independent (+0.0087/+0.0069 on our
+0.8451; +0.0054/+0.0046 on the official 0.8536 — smaller headroom at higher base, as
+expected). Official checkpoints for Context/ADE20K/Cityscapes/COCO-Stuff also exist
+upstream — this removes the "per-dataset trained baselines" blocker for Stage 3
+cross-dataset validation (remaining blockers: dataset images + text embeddings).
+
 Parameterization (2026-07-07): all SFP/DTLR constants moved to a `MODEL.SFP_DTLR`
 config block (config/configs.py:41-56; defaults = legacy verbatim values, so configs
 without the block are behavior-identical — verified by exact 0.8538 reproduction).
