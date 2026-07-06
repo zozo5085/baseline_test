@@ -2,6 +2,22 @@
 
 > 使用者慣例:每次重大改版在此記錄「改了什麼、為什麼、結果」。最新在上。
 
+## 2026-07-07(晚)— SFP+DTLR 移植成功:VOC mIoU 0.8538(+0.0087,免重訓)
+
+**做了什麼**
+- 新模組 `model/model_sfp_dtlr.py`:包裝原版 model.model 的 RECLIPPP,forward 輸出
+  疊 PG-CP-SFP 淨化 + SP-DTLR 濾波(超參數逐字照抄 862 檔;checkpoint 載入
+  0 missing / 0 unexpected;不加任何參數;model.model 未動)。
+- 排除來源檔的屬性殘差 stage(chair/diningtable VOC hack)— 對照組 0.8564 含該 stage。
+- 全量評測:**0.8538** vs baseline 0.8451(1448/1449,每張圖精修都有執行)。
+- config:`config/voc_test_sfp_dtlr_cfg.yaml`。
+- 已知風險:sfp_topk=800 絕對值、structure_classes=(4,8,10) 寫死 VOC 類別索引 —
+  泛化性審查(opus agent)進行中,目標五資料集皆有效。
+
+**同日稍早**
+- fusion 數學重做完成並驗收(gamma=0 = 精確 identity,l12_only = 0.8451 整;
+  smoke PASSED)。l9l12 v2 重訓 config 就緒,等使用者啟動(~5-7h)。
+
 ## 2026-07-07 — C 失敗診斷:排除 fusion 加法項,鎖定 normalize 路徑
 
 **做了什麼**

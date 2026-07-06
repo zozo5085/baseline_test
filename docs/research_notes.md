@@ -420,8 +420,30 @@ no final re-normalization, so that gamma=0 is exactly the identity/baseline path
 
 Status: DFF2d 0.4151 and l9l12 selective 0.4125 were both measured (and the l9l12
 checkpoint TRAINED) under the broken module — both numbers are void as evidence about
-fusion. l9l12 needs retraining with the fixed module + reworked fusion math before C/D
-rows can be filled.
+fusion. Fusion math reworked 2026-07-07 (gamma=0 = exact identity, verified: l12_only
+on baseline ckpt = 0.8451 exactly); l9l12 retrain (v2 configs, SAVE_DIR
+`experiments/voc_l9l12_selective_v2/`) pending user launch.
+
+### Test-time refinement track (no retraining, E1 from RECOMMENDATIONS.md)
+
+| Variant | mIoU | Delta vs baseline | Date | Evidence |
+|---|---|---|---|---|
+| baseline (model.model) | 0.8451 | — | 2026-07-07 re-verified | experiments/diag_baseline_modelmodel_console.log |
+| + PG-CP-SFP + SP-DTLR (`model.model_sfp_dtlr`) | **0.8538** | **+0.0087** | 2026-07-07 | experiments/voc_sfp_dtlr_eval/smoke_console.log (full 1448/1449; refinement executed once per image, 1449/1449) |
+
+Port notes: new module `model/model_sfp_dtlr.py` wraps model.model's RECLIPPP
+(checkpoint loads with 0 missing / 0 unexpected keys; zero new parameters; model.model
+untouched). Hyperparameters copied verbatim from
+`othermodel_guide/model_1/model_lrab_v1_voc_final_862.py` (sfp_topk=800,
+conf_thd=0.97, logit_beta=0.55, proxy_lambda=2.0, dtlr_beta=1.20, sigma_s=70,
+sigma_r=1.5, structure_classes=(4,8,10)). The source's attribute-residual stage
+(chair/diningtable hack, 862:1358-1615) is EXCLUDED — its 0.8564 reference number
+included that stage.
+
+Known VOC-bias risks pending the generalization review (2026-07-07, agent running):
+absolute `sfp_topk=800` (not resolution-relative), hard-coded VOC class indices
+`structure_classes=(4,8,10)`, all thresholds tuned on VOC. Target: gains must hold on
+Context / COCO-Stuff / ADE20K / Cityscapes (user requirement, Stage 3).
 
 Stage 2: boundary confusion
 
