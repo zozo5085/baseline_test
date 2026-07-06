@@ -16,9 +16,29 @@
 - Git:新增 remote `mine` = https://github.com/zozo5085/baseline_test(使用者自有
   repo;origin 仍為上游,禁 push)。
 
+**診斷結果(A/B/C 皆跑滿 1448/1449,同一顆 baseline 權重)**
+- A(fusion 模組,l12_only 只走 normalize)= **0.2160**
+- B(fusion 模組,fusion 全關)= **0.2838**
+- C(原始 model.model)= **0.8451** 完全重現
+- 結論:test 管線沒問題;`model_feature_fusion` 的**非融合路徑本身**就與 model.model
+  不等價(parity bug),既有 DFF2d 0.4151 / l9l12 0.4125 全部是壞模組量出來的,
+  不能作為 fusion 方向成敗的證據。修好 parity、B 重測回 0.8451 之前,fusion 實驗
+  全數凍結。
+- Git:已 push 至 https://github.com/zozo5085/baseline_test(remote `mine`)。
+
+**Parity bug 已找到並修復(同日)**
+- 元凶:`model_feature_fusion.py` 把 reference prompt 正規化寫成逐類 L2;原版
+  `model.py:473` 是全域 Frobenius norm。`bias_logits` 尺度/類別權重被改變 →
+  checkpoint 的 logit 校準崩壞。已改回一致(`model_feature_fusion.py:570`)。
+- 修後驗收:B(fusion 全關)= **0.8451** 完全重現;A(l12_only normalize 路徑)
+  = **0.7393** → normalize-and-replace 本身另吃 ~0.106,fusion 重做時 gamma=0
+  必須是精確 identity(殘差加在原始 f12 上、不得再正規化)。
+- DFF2d 0.4151、l9l12 0.4125 皆為壞模組下的產物,全部作廢;l9l12 需以修復後
+  模組+重做的融合式重訓。
+
 **下一步**
-- 依 A/B 結果修 fusion 特徵路徑(候選:原始特徵空間融合、或融合後還原 f12 統計),
-  重訓 l9l12;l6l12 續暫停。
+- 重做 fusion 數學(gamma=0 = identity)→ smoke → 重訓 l9l12;平行推進
+  SFP+DTLR 測試期精修(RECOMMENDATIONS.md Tier 1)。
 
 ## 2026-07-06 — L9+L12 selective fusion 訓練+評測完成(結果:失敗)
 

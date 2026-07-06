@@ -377,18 +377,51 @@ with `apply_safe_layer_fusion(...)` output (model_feature_fusion.py:544-545), wh
 destroying channel means/scales before it plausibly breaks text alignment for many
 classes (the exact-zero-IoU signature). Prime suspect.
 
-Diagnostic runs 2/3 (launched 2026-07-07, results pending):
-- A. baseline checkpoint + `l12_only` (normalize path only, zero fusion content),
-  cfg `config/voc_test_diag_l12only_baselineckpt_cfg.yaml`,
-  SAVE_DIR `experiments/diag_l12only_baselineckpt/`.
-- B. baseline checkpoint + FEATURE_FUSION.ENABLE=False (raw `v`, module parity check),
-  cfg `config/voc_test_diag_fusionoff_baselineckpt_cfg.yaml`,
-  SAVE_DIR `experiments/diag_fusionoff_baselineckpt/`.
+Diagnostic runs 2/3/4 (2026-07-07, all completed, full 1448/1449, baseline checkpoint
+`experiments/reproduce/voc_reclippp_baseline/best_weight.pth` in every run):
 
-Expected readout: A collapses to ~0.41 while B stays ~0.845 → normalization/replacement
-path confirmed as root cause; fix = feed `proj` un-standardized features (fuse in raw
-feature space, or blend then restore f12 statistics). Both ~0.845 → training-time
-corruption instead. Both ~0.41 → parity bug elsewhere in model_feature_fusion.
+| Run | Module | Fusion | mIoU | Log |
+|---|---|---|---|---|
+| A | model_feature_fusion | ENABLE=True, `l12_only` (normalize path, zero fusion content) | **0.2160** | experiments/diag_l12only_console.log |
+| B | model_feature_fusion | ENABLE=False (raw `v` passthrough) | **0.2838** | experiments/diag_fusionoff_console.log |
+| C | model.model (original) | n/a | **0.8451** (exact reproduction) | experiments/diag_baseline_modelmodel_console.log |
+
+Readout:
+- C proves the test pipeline (tools/test.py, data, env) did NOT drift.
+- B proves `model_feature_fusion` is NOT behavior-equivalent to `model.model` even with
+  fusion fully disabled — a parity bug in its non-fusion inference path. This alone
+  accounts for 0.8451 → ~0.28.
+- A (0.2160 < B 0.2838) shows the normalize-and-replace path adds further damage on top
+  of the parity bug.
+- Consequence: ALL model_feature_fusion results to date (DFF2d 0.4151, l9l12 selective
+  0.4125) were measured through a broken module and say nothing about the fusion ideas
+  themselves. Parity must be fixed and B re-run to 0.8451 before any fusion experiment
+  is interpretable.
+
+Root cause found and FIXED (2026-07-07): model_feature_fusion normalized the reference
+prompt per-class (`prompt.norm(dim=-1, keepdim=True)`) while model.model uses a single
+global Frobenius norm (`prompt.norm()`, model.py:473). The rescaled/rebalanced
+`bias_logits` broke the checkpoint's logit calibration regardless of fusion flags.
+Fixed at model_feature_fusion.py:570 to match model.model exactly. A line-level diff
+(agent, 2026-07-07) found all other inference-path differences behavior-preserving.
+
+Post-fix re-runs (baseline checkpoint, full 1448/1449):
+
+| Run | Fusion | mIoU pre-fix | mIoU post-fix |
+|---|---|---|---|
+| B | ENABLE=False (parity check) | 0.2838 | **0.8451** (exact parity restored) |
+| A | `l12_only` (normalize-and-replace f12, zero fusion content) | 0.2160 | **0.7393** |
+
+Remaining finding from A: `normalize_feature_map` (channel standardization + L2) applied
+to f12 before the frozen CLIP `proj` still costs ~0.106 mIoU on its own. Design
+consequence for the fusion rework: never feed a re-normalized f12 to `proj`; compute
+residuals (a9/a6) in scale-equalized space if needed, but add them to the RAW f12 with
+no final re-normalization, so that gamma=0 is exactly the identity/baseline path.
+
+Status: DFF2d 0.4151 and l9l12 selective 0.4125 were both measured (and the l9l12
+checkpoint TRAINED) under the broken module — both numbers are void as evidence about
+fusion. l9l12 needs retraining with the fixed module + reworked fusion math before C/D
+rows can be filled.
 
 Stage 2: boundary confusion
 
