@@ -456,6 +456,26 @@ and CBR/IABR rectification redesign (research_notes section 15).
 | + PG-CP-SFP + SP-DTLR legacy profile (`model.model_sfp_dtlr`) | **0.8538** | **+0.0087** | 2026-07-07 | experiments/voc_sfp_dtlr_eval/smoke_console.log (full 1448/1449; refinement executed once per image, 1449/1449); reproduced exactly after parameterization refactor (legacy_repro_console.log) |
 | + SFP+DTLR generalization profile (TOP_FRACTION 0.75, SIGMA_S_REL 2.3, DTLR_BETA 1.0, PROXY_LAMBDA 1.0, STRUCTURE_CLASSES []) | **0.8520** | **+0.0069** | 2026-07-07 | experiments/voc_sfp_dtlr_gen_eval/gen_console.log (full 1448/1449) |
 
+### IABR track (2026-07-07, closed — negative result)
+
+IABR (image-adaptive bias rectification, ported from
+othermodel_guide/model_author_reclippp_iabr.py into model/model_iabr.py; zero-init
+identity verified at 0.8451 exactly before training):
+
+| Stage | mIoU | Note |
+|---|---|---|
+| zero-init identity check (baseline ckpt) | 0.8451 | exact — port verified clean |
+| 50-epoch training, in-training eval | peak ~0.7831 @ epoch ~4, then monotone decline to ~0.62 | textbook drift: adaptive branches leave identity and keep hurting |
+| formal test of best_weight | **0.8001** | −0.0450 vs baseline; experiments/queue_logs/IABR_formal_test_*.log |
+
+Verdict: under ReCLIP++'s unsupervised training signal, the input-adaptive scale
+drifts away from identity and never recovers — even the best epoch tests 0.045 below
+baseline. Combined with the fusion-line result, the pattern of this project is now
+clear and paper-worthy: TRAINING-TIME additions (feature fusion, adaptive
+rectification) drift under the unsupervised objective (train-eval looks fine, formal
+test degrades), while TEST-TIME refinements are robust and transfer across
+checkpoints. The author's own lack of recorded IABR numbers is consistent with this.
+
 ### Official checkpoint track (2026-07-07) — GOAL ACHIEVED
 
 Upstream repo (dogehhh/ReCLIP) releases official checkpoints for ALL five datasets.
