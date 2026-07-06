@@ -484,31 +484,40 @@ class RECLIPPP(nn.Module):
         f6n = normalize_feature_map(layer_maps.get(6, f12))
 
         # Layer 12 stays semantic anchor. L9/L6 only inject residual spatial cues.
-        anchor_feat = self.proj(f12n)
+        # Gates are computed from the RAW f12 through the frozen CLIP proj: feeding a
+        # re-standardized f12 to proj breaks its calibration (baseline ckpt drops
+        # 0.8451 -> 0.7393; research_notes.md section 11 diagnosis, 2026-07-07).
+        anchor_feat = self.proj(f12)
         anchor_logits = cosine_logits(anchor_feat, text_features)
         g9, margin, entropy = build_uncertainty_gate(anchor_logits, temp=self.fusion_gate_temp)
         boundary = spatial_gradient_norm(anchor_logits)
         g6 = (g9 * boundary).clamp(0.0, 1.0)
 
-        a9 = f9n - f12n
-        a6 = f6n - f12n
+        # Residual directions live in scale-equalized space, then are rescaled to
+        # f12's local magnitude so they can be added to the RAW f12. gamma=0 (or
+        # l12_only, or fusion disabled) must be the EXACT identity fused == f12:
+        # the frozen proj only ever sees raw-statistics features.
+        s12 = f12.norm(dim=1, keepdim=True).clamp_min(1e-6)
+        a9 = (f9n - f12n) * s12
+        a6 = (f6n - f12n) * s12
 
         if self.fusion_mode == "l12_only" or not self.fusion_enabled:
-            fused = f12n
+            fused = f12
         elif self.fusion_mode == "l9_l12":
-            fused = f12n + self.fusion_gamma9 * g9 * a9
+            fused = f12 + self.fusion_gamma9 * g9 * a9
         elif self.fusion_mode == "l6_l12":
-            fused = f12n + self.fusion_gamma6 * g6 * a6
+            fused = f12 + self.fusion_gamma6 * g6 * a6
         elif self.fusion_mode == "l6_l9_l12":
-            fused = f12n + self.fusion_gamma9 * a9 + self.fusion_gamma6 * a6
+            fused = f12 + self.fusion_gamma9 * a9 + self.fusion_gamma6 * a6
         elif self.fusion_mode == "safe_l6_l9_l12":
-            fused = f12n + self.fusion_gamma9 * g9 * a9 + self.fusion_gamma6 * g6 * a6
+            fused = f12 + self.fusion_gamma9 * g9 * a9 + self.fusion_gamma6 * g6 * a6
         elif self.fusion_mode == "trainable_fusion":
             return None, {}
         else:
             raise ValueError(f"Unknown fusion_mode: {self.fusion_mode}")
 
-        fused = normalize_feature_map(fused)
+        # NOTE: no re-normalization of fused (identity requirement above).
+        fusedn = normalize_feature_map(fused)
         stats = {
             "gate9": g9.detach(),
             "gate6": g6.detach(),
@@ -516,7 +525,7 @@ class RECLIPPP(nn.Module):
             "anchor_logits": anchor_logits.detach(),
             "anchor_margin": margin.detach(),
             "anchor_entropy": entropy.detach(),
-            "cos_fused_f12": map_mean((fused * f12n).sum(dim=1, keepdim=True)),
+            "cos_fused_f12": map_mean((fusedn * f12n).sum(dim=1, keepdim=True)),
             "cos_f9_f12": map_mean((f9n * f12n).sum(dim=1, keepdim=True)),
             "cos_f6_f12": map_mean((f6n * f12n).sum(dim=1, keepdim=True)),
         }
