@@ -494,12 +494,33 @@ experiments/diag_official854_eval/bias_residual_raw.npz.
 | (d) Pearson r(per-image absent-DC, per-image error) | 0.730 (n=1449) | strong — residual bias predicts which images are hard |
 | (e) FP pixels from absent-elevated-DC classes | 7.15% | ceiling for a pure anti-hallucination method on VOC: modest |
 
-Verdict (my read): premise SUPPORTED; headroom on VOC is SMALL and CONCENTRATED
-(~7% FP, 5 confusable classes), not large/uniform. The diagnosis itself (image-dependent
-residual, r=0.73 with error) is a paper contribution. VOC mIoU gain will be small
-(near-saturated); the real payoff is expected on harder multi-class datasets
-(Context/ADE/COCO) where hallucination is worse. Next: oracle ceiling (GT-suppress
-absent classes -> max achievable mIoU) + a training-free gated-DC-removal probe.
+Verdict (my read): premise SUPPORTED. (Correction to an earlier under-read: the 7.15%
+"elevated-DC" figure is a narrow subset; the true anti-hallucination headroom is the
+oracle below, which is LARGE.)
+
+Intervention results (tools/analyze_bias_intervention.py, same test.py-exact eval,
+baseline reproduces 0.8536171 ≡ 0.8536; report docs/diagnostics/):
+
+| intervention | mIoU | vs 0.8536 | note |
+|---|---|---|---|
+| ORACLE: GT-suppress absent classes → -inf | **0.8998** | **+0.0462** | true ceiling of perfect anti-hallucination; the operator works at recall=1 |
+| hard gate, present := gap_c > theta (best) | 0.5835 | −0.270 | catastrophic; 381 imgs lose all classes |
+| hard gate, present := p95 prob > 0.3 (best) | 0.8535 | −0.0001 | ties; estimator recall 0.928 / prec 0.692 |
+
+Diagnosis: the gating OPERATOR is settled (it is the oracle op, reaching 0.8998 at
+recall=1). The bottleneck is estimator RECALL under a HARD gate — hard suppression
+zeroes the IoU of every present class the estimator misses, and even 7% misses erase
+the whole gain. p95 peak-height estimates presence far better than relative peakedness.
+
+DERIVED METHOD STATEMENT (evidence-driven, not ad hoc): to capture the +0.0462 the
+method must be a SOFT, calibrated, high-recall, image-conditioned class-presence gate
+(soft so a missed present class is attenuated, not zeroed). Presence-signal options,
+in increasing novelty/depth: (i) dense p95 peak — high recall but circular; (ii) the
+repo's DISABLED class_gate = z_global @ text — a signal INDEPENDENT of the dense
+prediction (soft log-domain); (iii) photometric-consistency presence (a present class
+is detected stably under photometric jitter, a hallucination flickers) — unifies the
+image-dependent-bias and photometric-instability failure modes into one method. All
+training-free (no drift). VOC headroom +0.0462; larger expected on Context/ADE/COCO.
 
 ### Official checkpoint track (2026-07-07) — GOAL ACHIEVED
 
