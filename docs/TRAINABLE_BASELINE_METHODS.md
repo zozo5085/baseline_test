@@ -1,9 +1,20 @@
 # Trainable Improvement Modules on the ReCLIP++ Baseline
 
-> 設計文件(2026-07-07)。三個 **從 ReCLIP++ baseline rectification stage 出發** 的
-> 小型、受約束、可訓練 improvement module。不基於 IABR。目標:改善 class
+> 設計文件(2026-07-07,UTF-8)。三個 **從 ReCLIP++ baseline rectification stage 出發**
+> 的小型、受約束、可訓練 improvement module。不基於 IABR。目標:改善 class
 > hallucination / image-dependent bias / photometric instability / local uncertainty。
-> 尚未實作、尚未實驗。
+
+## 決策(2026-07-07,premise 診斷後)
+
+- **Method A = 主線**。實作計畫見 `docs/METHOD_A_IMPLEMENTATION_PLAN.md`。
+- **Method B = 只保留 conservative ablation**(不獨立主線;作為 A 的對照/延伸,驗證
+  reliability-scaled bias 是否額外加值)。
+- **Method C = 不實作**。photometric-consistency premise 已被 test-time 診斷否證
+  (幻覺其實光度穩定,cov AUC 0.186)—— 僅保留為 negative finding
+  (`docs/diagnostics/photometric_consistency_premise.md`)。
+- 共同前提(所有方法沿用):oracle anti-hallucination headroom = **+0.0462**(VOC
+  0.8536→0.8998);VOC 近飽和,presence-gating 的主要 mIoU 回報預期在難資料集
+  (COCO-Stuff/ADE)。VOC run 的定位 = premise gate,非最終戰場。
 
 ---
 
