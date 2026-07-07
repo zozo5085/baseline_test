@@ -476,6 +476,31 @@ rectification) drift under the unsupervised objective (train-eval looks fine, fo
 test degrades), while TEST-TIME refinements are robust and transfer across
 checkpoints. The author's own lack of recorded IABR numbers is consistent with this.
 
+### Method direction A — image-dependent residual bias (diagnostic, 2026-07-07)
+
+Premise: ReCLIP++ subtracts a static, image-INDEPENDENT bias
+(bias_logits = pe_proj(pos_emb) @ prompt.T, identical for every image). Diagnostic
+(tools/analyze_bias_residual.py, official ckpt, full 1449 val, decompose each class's
+final per-pixel value into spatial-mean "DC" u_c and 95th-pct peak; GT used to label
+present/absent — analysis only, method will be unsupervised). Report+figure:
+docs/diagnostics/bias_residual_diagnostic.md, bias_residual.png; raw arrays
+experiments/diag_official854_eval/bias_residual_raw.npz.
+
+| measure | value | reading |
+|---|---|---|
+| (a) absent-class DC mean | 0.0050 (std 0.037) vs present 0.612 (0.360) | average residual small — PD filter already suppresses most hallucination |
+| (b) absent-class DC across-image std | median 0.031; top: person 0.073, sofa 0.066, dining-table 0.054, boat 0.050, sheep 0.049 | residual is strongly IMAGE-DEPENDENT, concentrated in confusable classes — exactly what a static term cannot track |
+| (c) peakedness gap | present 0.197 vs absent 0.006 | clean separator: present=peaked, bias=diffuse → gate the method on peakedness |
+| (d) Pearson r(per-image absent-DC, per-image error) | 0.730 (n=1449) | strong — residual bias predicts which images are hard |
+| (e) FP pixels from absent-elevated-DC classes | 7.15% | ceiling for a pure anti-hallucination method on VOC: modest |
+
+Verdict (my read): premise SUPPORTED; headroom on VOC is SMALL and CONCENTRATED
+(~7% FP, 5 confusable classes), not large/uniform. The diagnosis itself (image-dependent
+residual, r=0.73 with error) is a paper contribution. VOC mIoU gain will be small
+(near-saturated); the real payoff is expected on harder multi-class datasets
+(Context/ADE/COCO) where hallucination is worse. Next: oracle ceiling (GT-suppress
+absent classes -> max achievable mIoU) + a training-free gated-DC-removal probe.
+
 ### Official checkpoint track (2026-07-07) — GOAL ACHIEVED
 
 Upstream repo (dogehhh/ReCLIP) releases official checkpoints for ALL five datasets.

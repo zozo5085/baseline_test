@@ -1,0 +1,41 @@
+{
+  "a_present_mean": 0.6117763558929019,
+  "a_present_std": 0.3597715120285774,
+  "a_absent_mean": 0.00502774242716983,
+  "a_absent_std": 0.037431519536533814,
+  "b_median_absent_across_image_std": 0.03138229039084339,
+  "b_top5_classes_highest_std": [
+    [
+      "person",
+      0.07323291263055652
+    ],
+    [
+      "sofa",
+      0.06582688709751856
+    ],
+    [
+      "dining table",
+      0.05398569310109665
+    ],
+    [
+      "boat",
+      0.04977925344696286
+    ],
+    [
+      "sheep",
+      0.04909148080291653
+    ]
+  ],
+  "c_present_gap_mean": 0.19744867749219097,
+  "c_present_gap_std": 0.21924807335247515,
+  "c_absent_gap_mean": 0.006276240796833724,
+  "c_absent_gap_std": 0.03801961191445709,
+  "d_pearson_r": 0.7301825316585965,
+  "d_n_images": 1449,
+  "d_metric": "per-image error = 1 - pixel accuracy on valid (non-ignore) pixels (== FP-pixel fraction)",
+  "e_frac_fp_from_elevated_absent": 0.07146973957681589,
+  "e_fp_elevated_count": 350681,
+  "e_fp_total_count": 4906706,
+  "n_images": 1449,
+  "n_classes": 20
+}
