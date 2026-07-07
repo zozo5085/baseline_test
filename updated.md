@@ -2,6 +2,25 @@
 
 > 使用者慣例:每次重大改版在此記錄「改了什麼、為什麼、結果」。最新在上。
 
+## 2026-07-07 — Method A 實作完成(trainable soft presence-calibration head),待訓練
+
+- **背景轉向**:放棄救 IABR trainable,改在 ReCLIP++ baseline **rectification stage** 上設計
+  受約束的小型可訓練 module。設計 3 案 A/B/C(`docs/TRAINABLE_BASELINE_METHODS.md`):
+  A = soft presence calibration head(**主線**);B = reliability-guided bias scale(僅保留
+  conservative ablation);C = photometric/prompt consistency gate(**前提被診斷否證**,
+  cov AUC 0.186,只留 negative finding)。決策與計畫在 `docs/METHOD_A_IMPLEMENTATION_PLAN.md`。
+- **Method A 交付**:`model/model_presence.py` 子類化 baseline RECLIPPP。`__init__` 從
+  `PRESENCE.INIT_FROM`(官方 0.8536 ckpt)載入→**凍結整個 baseline**→只建 4 參數
+  `PresenceHead`(tau/temp/scale/gamma)。forward 在 `output_q` 加
+  `tanh(gamma)*scale*log(sigmoid((<z_global,text>-tau)*temp))`,**gamma zero-init → identity**。
+  loss = baseline region loss + 非對稱 presence BCE(recall 導向)+ baseline-preserving reg。
+  **為什麼這樣設計**:凍 baseline、只訓 4 純量 → 結構上不可能 drift,直接修掉
+  IABR/fusion 的失敗模式(從頭 retrain 在無監督目標下漂移)。
+- **驗收(全過)**:import OK;**identity(gamma=0)mIoU = 0.8536 整**(缺鍵只有 4 個 head 參數);
+  smoke = trainable params **恰 4 個**、loss 有限、梯度落在 head。commit `5d11af2`,已 push `mine`。
+- **狀態**:**尚未訓練**。下一步啟動 ablation 1(`zglobal`),建議 EPOCH 50→15(4 純量收斂快)。
+  誠實預期:VOC 近飽和,最可能**打平 ~0.8536**(定位為 premise gate,真正 payoff 在難資料集)。
+
 ## 2026-07-07(清晨)— IABR 收案:0.8001,負結果(訓練期改良二連敗)
 
 - 50-epoch 訓練:eval 峰值 0.7831(epoch ~4)後單調下滑到 ~0.62;best_weight
