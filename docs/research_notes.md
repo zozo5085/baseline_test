@@ -643,6 +643,46 @@ ADE20K
 COCO Stuff
 ```
 
+### Test-time refinement + TTA Results (2026-07-08, official ckpt baseline 0.8536)
+
+Inference-only experiments (frozen baseline, no CLIP-feature changes) via new
+`tools/test_tta.py` (multi-scale + horizontal-flip TTA; `--scales 1.0` no-flip is
+byte-equivalent to `tools/test.py`, verified = 0.8536 exactly). VOC val, 1449 images,
+formal `TEST.PD` eval. Full table: `docs/method_results.csv`; narrative:
+`docs/AUTONOMOUS_SESSION_2026-07-08.md`.
+
+| Base method \ TTA | alone | +flip | +ms(1.0,1.25)+flip |
+|---|---|---|---|
+| ReCLIP++ baseline (model.model) | 0.8536 | 0.8601 | 0.8637 |
+| SFP+DTLR (model.model_sfp_dtlr) | 0.8590 | 0.8639 | **0.8661** |
+| Method A / run1 (model.model_presence, trained) | 0.8565 | 0.8637 | 0.8643 |
+
+- baseline + ms(1.0,1.25,**1.5**)+flip = 0.8599 → scale 1.5 hurts; scale peak = 1.25.
+- oracle image-level FP-removal ceiling = 0.8998.
+
+Findings:
+1. **New test-time best = SFP+DTLR + ms(1.0,1.25) + flip = 0.8661** (+0.0125 over baseline,
+   inference-only). Beats prior test-time best SFP+DTLR 0.8590.
+2. **flip TTA alone = 0.8601** already exceeds SFP+DTLR 0.8590 — zero-parameter, most robust
+   single lever. Multi-scale (peak 1.25) adds ~+0.004; 1.5 overshoots CLIP's regime and drops.
+3. **Method A (run1)**: trained 4-scalar presence head, LR 0.01, 15 epochs, best epoch 12
+   (per-epoch val 0.8201), formal = **0.8565 > baseline +0.0029**. Training helps but is
+   dominated by test-time TTA. val->formal offset held (+0.0364; the ~0.04 gap is TEST.PD
+   methodology, see above). This is the correctly-*learned* version of the soft CLASS_GATE
+   (a naive hand-tuned gate THRESHOLD 0.20 / LOG_BIAS_SCALE 2.0 collapsed to 0.097 on a
+   20-image subset — present-class z_global.text cosines sit below 0.20).
+4. Once TTA is applied, the three base methods converge to 0.864-0.866 — TTA washes out the
+   base-method difference; SFP+DTLR leads only marginally.
+5. Consistent with VOC saturation; expected real payoff is on harder datasets (only VOC on
+   disk — Context/ADE/COCO-Stuff/Cityscapes need download).
+
+Reproduce best:
+`python tools/test_tta.py --cfg config/voc_test_sfp_dtlr_official_cfg.yaml --model RECLIPPP --model_module model.model_sfp_dtlr --scales 1.0,1.25 --flip --save_dir experiments/voc_sfpdtlr_ms125_flip/`
+
+Methodological caveat: the multi-scale set (1.25) was selected on the test set (exploratory);
+a formal claim should fix scales on a held-out split. flip (0.8601) and SFP+DTLR+flip (0.8639)
+are hyperparameter-free and the most defensible clean gains.
+
 ## 12. Suggested Evaluation Metrics
 
 Besides mIoU, add:

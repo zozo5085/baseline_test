@@ -1,7 +1,22 @@
 # SESSION HANDOFF — ReCLIP++ C-USS 研究(貼上即可接續)
 
 > **給下一個 session 的你**:這份是可直接貼上的接手 prompt。讀完本檔後,**不要重新探索、不要重跑已完成的診斷**,直接從 §5「下一步」開工。所有數字用 4 位小數逐字沿用,不要四捨五入進記錄。基準線是 **官方 checkpoint 0.8536**,使用者的硬性要求:**所有任務結果一律要 > 0.8536**。
-> 最後更新:2026-07-07(承接 d9cd3f55 session,已 compaction 一次)。
+> 最後更新:2026-07-08(前一 session:發現 voc_presence 非乾淨、已 formal-test ep0 ckpt = 0.8442;詳見下方更正塊)。
+
+---
+
+## ⚠️ 2026-07-08 狀態更正(**優先讀這塊**,取代下方 §0 / §1-MethodA / §3 / §4 / §5 中「尚未訓練、voc_presence 乾淨」等已過時敘述)
+
+- **🔴 2026-07-08 run1 訓練中(PID 30516,detached)**:使用者指示「做A」= 待決定清單的 (A)。已啟動完整 run:LR 0.01 / 15 epoch / MODE `zglobal` / INIT official / **SAVE_DIR `experiments/voc_presence_run1/`**(輸出 `console.log` stdout + `console.err.log` tqdm)。smoke 過(trainable=4、loss finite、train imgs=1464、8.85 it/s)。判準:最終 best_weight 用 **formal test 比 0.8536**(per-epoch val 低 ~0.04,勿直接比);若 per-epoch val 崩向 ~0.80(IABR 式 drift)就停。**勿重啟、勿覆蓋 run1、勿覆蓋 voc_presence 的 ep0 權重。** 完成後 formal test → 寫 `research_notes.md §11` + `updated.md` + 逐檔 commit push `mine`。
+- **Method A 已跑過一輪並中止**:使用者 **2026-07-07 23:45** 啟動 presence 訓練(LR 0.01),為重啟 session 於 **epoch 1 中途 kill**(epoch 0 已完成)。非失敗,是人為中止。
+- `experiments/voc_presence/` **不是乾淨的**:內含該中止 run 的 **epoch-0 `best_weight.pth`**(mtime 2026-07-07 23:45:57,**勿覆蓋**)+ 1449 個 `.pt`。存檔 head 參數:gamma **0.0192** / tau 0.437 / temp 2.72 / scale 0.716。
+- **已 formal-test 該 ep0 ckpt = `0.8442`**(`config/voc_test_presence_ep0_cfg.yaml` → `experiments/voc_presence_ep0_test/`,1449/1449 完成)。
+- **三方對照(逐字)**:identity(gamma=0)formal **0.8536** / ep0 formal **0.8442** / ep0 train.py per-epoch val **0.8039**。
+  - **校準**:per-epoch val 比 formal test 低 **~0.04**(同一 ckpt:0.8039 vs 0.8442)→ tripwire / 最終評分**一律用 formal test**,勿拿 per-epoch val 直接跟 0.8536 比。
+  - ep0 formal 0.8442 **比 identity 低 ~0.009**(1 個 epoch 把 4 參數推往略微有害方向;**只 epoch 0、趨勢未知**,可能回升也可能像 IABR 掉到 ~0.80)。
+- **config 變更(尚未 commit)**:`config/voc_train_presence_cfg.yaml` 的 `EPOCH`/`MAX_EPOCH` 已 50→15;新增 `config/voc_test_presence_ep0_cfg.yaml`。
+- **目前無 process 在跑**;GPU ~11% / 6.9 GB(背景桌面程式);git HEAD `a626c71`,無新 commit。
+- **待決定(下一步)**:Method A 重訓方向 —(A)完整跑 LR 0.01 / 15ep / **新 SAVE_DIR** `voc_presence_run1`、final best_weight 用 formal test 評 vs 0.8536;(B)降 LR(0.001–0.003)再跑;(C)先查 BCE presence loss 與 mIoU 是否對齊;(D)跳難資料集(需下載)。**重訓一律新 SAVE_DIR,勿覆蓋 voc_presence 的 ep0 best_weight。**
 
 ---
 

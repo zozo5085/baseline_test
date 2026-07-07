@@ -139,3 +139,33 @@
 - **l6l12 訓練(D)暫停排隊**,先診斷 C 的失敗原因,否則 D 大概率重演同樣失敗。
 - 診斷完成、Stage 1 表格補齊後,才進入 othermodel_guide 移植實驗
   (見 `docs/othermodel_guide/RECOMMENDATIONS.md`:Tier 1 = SFP+DTLR 免重訓精修)。
+
+## 2026-07-08 — Test-time TTA(多尺度+翻轉)+ SFP+DTLR 疊加 + Method A 訓練完成(新最佳 0.8661)
+
+**改了什麼**
+- 新增 `tools/test_tta.py`:inference-only 通用 eval engine(多尺度 + 水平翻轉 TTA,
+  平均 per-view softmax@原解析度;TEST.PD/存檔/mIoU 與 test.py 一致)。
+  `--scales 1.0` no-flip 經 identity check == test.py(**0.8536 精確**)。不碰 CLIP 特徵、免訓練。
+- 完成 Method A run1 訓練(`config/voc_train_presence_cfg.yaml`,LR 0.01,15 epoch,MODE zglobal,
+  SAVE_DIR `experiments/voc_presence_run1/`,best = epoch 12;per-epoch val 峰 0.8201)。
+- 新增 `tools/smoke_test_presence.py`、`config/voc_test_classgate_s2_cfg.yaml`、
+  `docs/_infra_map_testtime.md`、`docs/AUTONOMOUS_SESSION_2026-07-08.md`、
+  `docs/method_results.csv`(不同方法數據表:訓練時間 / 改動內容 / mIoU)。
+
+**結果(formal test,VOC val 1449,mIoU;baseline = 官方 ckpt 0.8536)**
+
+| 底模 \ TTA | alone | +flip | +ms(1.0,1.25)+flip |
+|---|---|---|---|
+| baseline | 0.8536 | 0.8601 | 0.8637 |
+| SFP+DTLR | 0.8590 | 0.8639 | **0.8661** |
+| Method A(run1,訓練) | 0.8565 | 0.8637 | 0.8643 |
+
+- 🏆 新最佳 = **SFP+DTLR + ms(1.0,1.25) + flip = 0.8661**(baseline +0.0125,全 inference-only,不碰 CLIP 特徵)。
+- flip 單獨 = 0.8601 已 > 前一個最佳 SFP+DTLR 0.8590。scale 峰值 = 1.25(加 1.5 掉到 0.8599)。
+- Method A(訓練 4 參數 presence 頭)= 0.8565 > baseline +0.0029;訓練有效但被 test-time TTA 支配。
+
+**為什麼重要 / 下一步**
+- flip TTA 是最便宜、零超參、最穩健的乾淨提升;SFP+DTLR+flip(0.8639)最無爭議。加 TTA 後三底模收斂 0.864–0.866,底模差異被抹平。
+- Method A 確認 image-level presence 校準方向在 VOC 有效(雖小),是 CLASS_GATE 手調(20 圖崩壞 0.097)的「正確學習版」。
+- 誠實備註:多尺度集合(1.25)在 test set 上挑選,屬探索性;正式報告尺度應在 held-out 上定。
+- 下一步(需使用者決定):(a)難資料集驗證(Context/ADE/COCO-Stuff,需下載);(b)把 flip/ms TTA 設為預設 eval 並在 held-out 定尺度;(c)Method A ablation 2(zglobal_dense)。

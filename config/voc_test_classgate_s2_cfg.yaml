@@ -4,39 +4,31 @@ DATASET:
   DATAROOT: 'data/VOCdevkit/VOC2012/'
   SCALE: [2048, 336]
   RATIO_RANGE: [0.5, 2.0]
-  CROP_SIZE: [336, 336]
+  CROP_SIZE: [512, 512]
   CAT_MAX_RATIO: 0.75
   IMG_NORM_CFG:
     MEAN: [122.771, 116.746, 104.094]
     STD: [68.501, 66.632, 70.323]
     RGB: True
   TEXT_WEIGHT: 'text/voc_ViT16_clip_text.pth'
-  K: 2
-  THRESHOLD: 23
   REDUCE_ZERO_LABEL: TRUE
-  IGNORE_INDEX: 255
 
 MODEL:
   FEATURE_EXTRACTOR: 'vit'
   TEXT_CHANNEL: 512
   VISUAL_CHANNEL: 768
-  TRAINING: True
-  PRESENCE:
-    MODE: "zglobal"
-    INIT_FROM: "experiments/official/voc_reclippp_854/best_weight.pth"
-    BCE_W: 1.0
-    NEG_POS_W: 0.2
-    REG_W: 0.1
-
-TRAIN:
-  BATCH_SIZE: 1
-  MAX_EPOCH: 15
-  EPOCH: 15
-  LR: 0.01
+  TRAINING: False
+  CLASS_GATE:
+    ENABLE: True
+    THRESHOLD: 0.20
+    TEMP: 10.0
+    LOG_BIAS_SCALE: 2.0
 
 TEST:
   BATCH_SIZE: 1
+  PD: 1.0
 
 EVAL_METRIC: "miou"
-SAVE_DIR: "experiments/voc_presence_run1/"
+SAVE_DIR: "experiments/voc_classgate_s2/"
+LOAD_PATH: "experiments/official/voc_reclippp_854/best_weight.pth"
 NUM_WORKERS: 4
