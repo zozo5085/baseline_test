@@ -60,6 +60,14 @@ cfg.MODEL.SFP_DTLR.DTLR_NUM_ITER = 1
 cfg.MODEL.SFP_DTLR.DTLR_STRUCTURE_GAIN_THD = 0.00
 cfg.MODEL.SFP_DTLR.DTLR_STRUCTURE_CLASSES = [4, 8, 10]
 
+cfg.MODEL.PAMR = edict()
+cfg.MODEL.PAMR.NUM_ITER = 10
+cfg.MODEL.PAMR.DILATIONS = [1, 2, 4, 8, 12, 24]
+# "token": refine at the baseline token-grid resolution (same hook as SFP+DTLR).
+# "image": upsample logits to the original image resolution, run PAMR there
+#          (where PAMR was designed to operate), then downsample back.
+cfg.MODEL.PAMR.RESOLUTION = "token"
+
 cfg.TRAIN = edict()
 cfg.TRAIN.BATCH_SIZE = 1
 cfg.TRAIN.MAX_EPOCH = 50

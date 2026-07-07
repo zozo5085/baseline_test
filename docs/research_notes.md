@@ -488,7 +488,28 @@ VOC ReCLIP++ checkpoint downloaded to `experiments/official/voc_reclippp_854/`.
 | official ckpt + SFP+DTLR generalization profile (no VOC hacks) | **0.8582** | experiments/queue_logs/SFPDTLR_official_gen_*.log (+0.0046) |
 
 Both variants EXCEED the published 85.4, including the de-VOC-ified generalization
-profile. The refinement gain is checkpoint-independent (+0.0087/+0.0069 on our
+profile.
+
+**Refiner comparison — PAMR (2026-07-07, fair, all on official ckpt 0.8536):**
+The standard training-free refiner PAMR (Araslanov & Roth CVPR 2020, faithful
+visinf/1-stage-wseg port, model/model_pamr.py; NUM_ITER=0 identity verified 0.8536 in
+both token and full-res modes) was benchmarked at its designed setting AND at our hook.
+
+| PAMR setting | mIoU | vs 0.8536 |
+|---|---|---|
+| token grid / 10 iter | 0.5843 | −0.269 |
+| token grid / 3 iter | 0.7250 | −0.129 |
+| token grid / 1 iter | 0.8128 | −0.041 |
+| full image res / 10 iter (PAMR's designed setting) | 0.8361 | −0.018 |
+
+Every PAMR configuration — including full-resolution where PAMR is designed to run —
+scores BELOW the baseline; it uniformly hurts. SFP+DTLR (0.8590) is the only refiner
+that improves the already-sharp ReCLIP++ rectified logits. PAMR's aggressive
+appearance-diffusion bleeds across semantically-correct-but-appearance-different
+regions; DTLR is gentler and confidence-guided (SFP purification precedes it). This
+is a fair comparison (PAMR given its best resolution) and it strengthens the paper's
+refiner claim. DenseCRF comparison pending (pydensecrf not installed; numpy-2
+incompatible on this env — needs a decision before touching the environment). The refinement gain is checkpoint-independent (+0.0087/+0.0069 on our
 0.8451; +0.0054/+0.0046 on the official 0.8536 — smaller headroom at higher base, as
 expected). Official checkpoints for Context/ADE20K/Cityscapes/COCO-Stuff also exist
 upstream — this removes the "per-dataset trained baselines" blocker for Stage 3
