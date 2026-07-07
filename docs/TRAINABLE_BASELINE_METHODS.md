@@ -153,7 +153,18 @@ A 把一個 **校準過的 image-level presence log-prior** 學進來。
 
 ---
 
-## 5. Method C — Photometric / Prompt Consistency-Trained Gate
+> **[2026-07-07 UPDATE] Method C premise REFUTED** by a test-time diagnostic
+> (tools/analyze_photometric_consistency.py, official ckpt, VOC val, K=5 views).
+> Cross-view instability is dominated by signal MAGNITUDE: present classes flicker
+> MORE (p95 cov present 0.0748 vs absent 0.0462), absent classes sit pinned at a
+> stable near-zero floor. AUC of cov as an absent-detector = 0.186 (reverse of the
+> hypothesis). Combining with peak-height wrecks precision (0.69→0.075). "Hallucination
+> flickers" is FALSE on this checkpoint — hallucinations are photometrically STABLE.
+> Method C is dropped. Only faint signal: z_global-cosine cross-view cov AUC≈0.65 (too
+> weak to build on). Report: docs/diagnostics/photometric_consistency_premise.md.
+> Consequence: pursue A/B instead; but first cheaply verify A's premise (see §7 note).
+
+## 5. Method C — Photometric / Prompt Consistency-Trained Gate  [PREMISE REFUTED — see note above]
 
 **動機失敗機制**:photometric instability +(經由一致性)class hallucination。**真實在場
 類別在光度擾動 / prompt 改寫下穩定被偵測,幻覺類別閃爍。** C 用 **一致性** 當自監督訊號

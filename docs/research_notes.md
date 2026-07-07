@@ -522,6 +522,24 @@ is detected stably under photometric jitter, a hallucination flickers) — unifi
 image-dependent-bias and photometric-instability failure modes into one method. All
 training-free (no drift). VOC headroom +0.0462; larger expected on Context/ADE/COCO.
 
+### Method direction — presence-gating premise checks (2026-07-07)
+
+Trainable-module designs in docs/TRAINABLE_BASELINE_METHODS.md (A soft presence
+calibration on z_global; B reliability-guided bias scale; C photometric-consistency
+gate). Cheap test-time premise diagnostics run before any training:
+
+- Method C REFUTED (tools/analyze_photometric_consistency.py): hallucinations are
+  photometrically STABLE, not flickering — cross-view instability is magnitude-driven
+  (present cov 0.075 > absent 0.046; cov-as-absent-detector AUC 0.186). Dropped.
+- Still open for A: is z_global·text a strong-enough SOFT presence gate to beat 0.8536
+  at test time? (hard gate ties at best; soft z_global gate untested). This is the next
+  cheap check before building A's trainable version.
+- Sobering pattern: oracle headroom is +0.0462 but every simple presence estimator
+  measured so far (dense peak-height, photometric consistency) only TIES baseline on
+  VOC — separating faint-present from confident-absent is hard on a near-saturated
+  20-class set. The presence-gating payoff likely lives on harder datasets
+  (COCO-Stuff 171 / ADE 150), which need downloads.
+
 ### Official checkpoint track (2026-07-07) — GOAL ACHIEVED
 
 Upstream repo (dogehhh/ReCLIP) releases official checkpoints for ALL five datasets.
