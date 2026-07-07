@@ -68,6 +68,14 @@ cfg.MODEL.PAMR.DILATIONS = [1, 2, 4, 8, 12, 24]
 #          (where PAMR was designed to operate), then downsample back.
 cfg.MODEL.PAMR.RESOLUTION = "token"
 
+# Method A: trainable soft presence-calibration head (model.model_presence).
+cfg.MODEL.PRESENCE = edict()
+cfg.MODEL.PRESENCE.MODE = "zglobal"       # "zglobal" | "zglobal_dense"
+cfg.MODEL.PRESENCE.INIT_FROM = ""         # official baseline ckpt to load+freeze before training
+cfg.MODEL.PRESENCE.BCE_W = 1.0            # image-level presence BCE weight
+cfg.MODEL.PRESENCE.NEG_POS_W = 0.2       # <1 => suppressing a present class costs 1/NEG_POS_W more
+cfg.MODEL.PRESENCE.REG_W = 0.1           # baseline-preserving regularization weight
+
 cfg.TRAIN = edict()
 cfg.TRAIN.BATCH_SIZE = 1
 cfg.TRAIN.MAX_EPOCH = 50
