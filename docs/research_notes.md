@@ -735,6 +735,30 @@ Only the confidence-gate confound was removed; the under-trained-base confound (
 untested by user scope (no longer Context training). **flip-TTA remains the sole clean dataset-agnostic
 positive.** Next: pivot to LGAK (`NEW_DIRECTION_LGAK_RESEARCH_PLAN.md`), pending user go.
 
+**Converged-base resolution (2026-07-09, Top-3 #1 — DECISIVE).** To remove the last confound (the
+8-ep base was under-trained), a vanilla base was trained to convergence
+(`experiments/context_vanilla_converged/`, EPOCH 30, same config as run2 otherwise — no method/LR
+change; train-val plateaued ~0.22–0.23 after ep13, best ep17). Formal full-val (PD 0.85), same fixed
+protocol, `--load_path` to the converged weight:
+
+| method | mIoU | Δ vs base no-TTA |
+|---|---|---|
+| baseline no-TTA | 0.2412 | — |
+| baseline flip | 0.2473 | **+0.0061** |
+| agnostic SFP+DTLR gen no-TTA | 0.2353 | **−0.0059** |
+| agnostic SFP+DTLR gen flip | 0.2383 | −0.0090 (vs base flip) |
+| entropy-gate SFP+DTLR no-TTA | 0.2367 | **−0.0045** |
+| entropy-gate SFP+DTLR flip | 0.2400 | −0.0073 (vs base flip) |
+
+The base improved 0.1980 → 0.2412 (under-train confound removed), yet **SFP/DTLR is still negative**
+(−0.0059 plain, −0.0045 de-confounded — if anything slightly *more* negative than on the 8-ep base:
+a better base has less unreliable mass to fix, so the refinement's collateral cost dominates).
+**flip-TTA generalizes again** (+0.0061, cf VOC +0.0065, 8-ep +0.0048). **Verdict — both confounds
+(under-training + VOC-calibrated CONF_THD gate) now removed: SFP/DTLR is formally downgraded to
+VOC-effective-but-not-generalizable.** flip-TTA is the sole clean dataset-agnostic positive. Journal
+**Framing A (generalization audit) is locked**; per the pre-registered rule the negative result means
+no ADE run is needed to settle the SFP question (ADE would only broaden the flip-TTA / baseline claim).
+
 ### New direction: LGAK-MVP (language-guided adaptive kernel, 2026-07-08)
 
 Separate track from the journal generalization work (`docs/NEW_DIRECTION_LGAK_RESEARCH_PLAN.md`,

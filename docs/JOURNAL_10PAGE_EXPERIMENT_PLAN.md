@@ -11,6 +11,16 @@ LGAK (`docs/LGAK_IMPLEMENTATION_REVIEW.md`) is **archived as a separate new-dire
 
 ## 0. Status and the central strategic decision (read first)
 
+> **RESOLVED 2026-07-09 (Top-3 #1 complete).** The confound is gone and the decision is made.
+> A **converged** Context base (0.1980 → **0.2412**, val plateaued after ep13) still shows SFP/DTLR
+> **negative** — −0.0059 plain gen, −0.0045 de-confounded (entropy-gate) — while **flip-TTA
+> generalizes again (+0.0061)**. Both confounds (under-training + the VOC-calibrated CONF_THD gate)
+> are now removed. Per the pre-registered Decision Rule, **SFP/DTLR is downgraded to
+> VOC-effective-but-not-generalizable, and Framing A (generalization audit) is LOCKED.** The sections
+> below are kept as the reasoning of record; where they say "pending / Framing B", read "resolved →
+> Framing A". flip-TTA is the paper's clean generalizable positive; no ADE run is required to settle
+> the SFP question (ADE would only broaden the flip-TTA / baseline claim).
+
 The journal was positioned around one thesis (`JOURNAL_EXTENSION_PLAN.md:17`): *reliability-guided
 logit purification (SFP/DTLR) generalizes across datasets*. **Our own results, produced under that
 plan's own protocol, do not yet support that thesis as a main claim.** The one non-VOC datapoint we
@@ -87,16 +97,21 @@ VOC (reproduced baseline **0.8536**; full val 1449; PD 1.0):
 | SFP+DTLR gen + flip | 0.8639 | +0.0103 | formal |
 | Method A (trainable presence head) | 0.8565 | +0.0029 | formal (secondary) |
 
-PASCAL Context (in-repo 8-ep base; full val 5105; PD 0.85) — **preliminary: base not converged**:
+PASCAL Context (in-repo **converged** base `context_vanilla_converged`, EPOCH 30, val plateaued
+~0.22–0.23; full val 5105; PD 0.85) — **formal (both confounds removed)**:
 
-| result | mIoU | Δ | class |
+| result | mIoU | Δ vs base | class |
 |---|---|---|---|
-| baseline no-TTA | 0.1980 | — | formal-preliminary |
-| baseline + flip-TTA | 0.2028 | **+0.0048** | formal-preliminary |
-| agnostic SFP+DTLR no-TTA | 0.1929 | −0.0051 | formal-preliminary (negative) |
-| agnostic SFP+DTLR + flip | 0.1955 | −0.0025 | formal-preliminary |
-| agnostic SFP+DTLR + entropy-gate no-TTA | 0.1945 | −0.0035 | formal-preliminary (de-VOC) |
-| agnostic SFP+DTLR + entropy-gate + flip | 0.1973 | −0.0055 | formal-preliminary |
+| baseline no-TTA | 0.2412 | — | formal |
+| baseline + flip-TTA | 0.2473 | **+0.0061** | formal (flip generalizes) |
+| agnostic SFP+DTLR no-TTA | 0.2353 | **−0.0059** | formal (negative) |
+| agnostic SFP+DTLR + flip | 0.2383 | −0.0090 (vs base flip) | formal |
+| agnostic SFP+DTLR + entropy-gate no-TTA | 0.2367 | **−0.0045** | formal (de-VOC, still negative) |
+| agnostic SFP+DTLR + entropy-gate + flip | 0.2400 | −0.0073 (vs base flip) | formal |
+
+*(Superseded 8-ep under-trained base, for the record: baseline 0.1980 / flip 0.2028 (+0.0048) /
+SFP 0.1929 (−0.0051) / SFP+entgate 0.1945 (−0.0035). The converged base confirms the same signs
+with a larger negative for SFP — under-training was not the cause.)*
 
 ### 2B. Exploratory-VOC (appendix/diagnostic only — NOT main claim)  — 不能當 main claim
 
@@ -293,24 +308,29 @@ the SFP/DTLR generalization fails (Framing A), LGAK is the natural *next paper*,
 
 ## 11. Top-3 priority next experiments  — 下一步最優先 3 個實驗
 
-Ordered by decision-value (each resolves whether Framing B is alive):
+Status: **#1 DONE (2026-07-09) → Framing A locked.** Remaining priorities re-ordered below.
 
-**#1 — Converged PASCAL Context base, re-run the full protocol (incl. entropy-gate).**
-Why first: it removes the **last remaining confound** on the pivotal negative result. The current
-Context delta (−0.0035 de-confounded) was measured on an 8-epoch under-trained base (0.198). Train
-Context to convergence (~30–50 ep, in-repo, new SAVE_DIR), then re-run baseline no-TTA/flip + agnostic
-SFP/DTLR (gen + entropy-gate) no-TTA/flip. Outcome decides the framing: **positive → Framing B alive;
-still negative → Framing A confirmed** and SFP/DTLR is honestly downgraded. Cost: ~half day. Highest
-information per GPU-hour.
+**#1 — Converged PASCAL Context base, re-run the full protocol. ✅ DONE.**
+Trained `context_vanilla_converged` (EPOCH 30; val plateaued ~0.22–0.23, best ep17); re-ran the fixed
+protocol (`--load_path` to the converged weight, no method/hyperparameter change). Result: baseline
+**0.2412** (vs 8-ep 0.1980 — under-train confound removed), flip **0.2473 (+0.0061)**, agnostic SFP
+**0.2353 (−0.0059)**, entropy-gate SFP **0.2367 (−0.0045)**. **SFP/DTLR is still negative on a
+converged, de-confounded base → downgraded (VOC-effective-not-generalizable).** flip-TTA generalizes
+again. Framing A confirmed; Framing B closed.
 
-**#2 — ADE20K in-repo rectification base + 4-step protocol.**
-Why: the decisive **second non-VOC dataset**; no generalization claim (positive or negative) is
-credible on a single non-VOC point. Prepare per §3 checklist (verify class order first — the Context
-trap), train an in-repo base, run the fixed 4-step. 150 classes stress-tests the entropy-gate's
-class-count invariance the hardest. Cost: ~1 day (training + eval). If #1 and #2 are both negative,
-Framing A is locked and the SFP-generalizes claim is dropped for this paper.
+**#2 (now top actionable) — Diagnostics + flip-TTA consolidation on VOC + Context.**
+The strongest existing result is flip-TTA (VOC +0.0065, Context +0.0061). Turn it into a defensible
+Table 2 + the "why" figures, and produce the required diagnostics (§6/§8): boundary-band error,
+small/thin-object mIoU, false-positive class count, before/after logit + entropy heatmaps (debug
+export exists). Also fills Ablation 1 (component build-up) — all test-time, no training. Low compute,
+directly supports the locked Framing A. **Do this next.**
 
-**#3 — Diagnostics + flip-TTA consolidation on VOC + Context (low compute, high writing value).**
+**#3 (optional, breadth only) — ADE20K in-repo base + 4-step protocol.**
+No longer needed to settle the SFP question (settled: negative). Its remaining value is a **third
+dataset for the flip-TTA / baseline generalization table** and a 150-class stress test of the
+entropy-gate's class-count invariance. Prepare per §3 checklist (verify class order first — the
+Context trap). Cost ~1 day training; run only if the paper wants a third dataset. Cityscapes /
+COCO-Stuff remain further-optional breadth.
 Why: turns the strongest existing result (flip-TTA) into a defensible table + the "why" figures, and
 produces the required diagnostics for §6/§8 regardless of #1/#2. Run: boundary-band error, small/thin-
 object mIoU, false-positive class count, and the before/after logit + entropy heatmaps (debug export
