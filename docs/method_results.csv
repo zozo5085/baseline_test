@@ -1,12 +1,12 @@
 ﻿method,改動內容,訓練時間,mIoU,eval_type,save_dir,date,notes
 oracle_FP_removal,image-level 完美去除不存在類(理論上限,非實作),N/A,0.8998,oracle,-,2026-07,反幻覺天花板 +0.0462(參考上限)
-SFP+DTLR + ms(1.0_1.25) + flip,SFP+DTLR refine + 多尺度(1.0,1.25)+ 翻轉 TTA(無訓練),test-time,0.8661,formal_test,experiments/voc_sfpdtlr_ms125_flip/,2026-07-08,★★本 session 最佳 baseline+0.0125
-MethodA_run1 + ms(1.0_1.25) + flip,訓練頭(Method A)+ 多尺度+翻轉 TTA,~1.5h+test-time,0.8643,formal_test,experiments/voc_presence_run1_ms125_flip/,2026-07-08,訓練頭+full TTA;略低於 SFP+DTLR 版
+SFP+DTLR + ms(1.0_1.25) + flip,SFP+DTLR refine + 多尺度(1.0,1.25)+ 翻轉 TTA(無訓練),test-time,0.8661,formal_test,experiments/voc_sfpdtlr_ms125_flip/,2026-07-08,[EXPLORATORY-VOC-ms 非正式主結果] ★★本 session 最佳 baseline+0.0125
+MethodA_run1 + ms(1.0_1.25) + flip,訓練頭(Method A)+ 多尺度+翻轉 TTA,~1.5h+test-time,0.8643,formal_test,experiments/voc_presence_run1_ms125_flip/,2026-07-08,[EXPLORATORY-VOC-ms 非正式主結果] 訓練頭+full TTA;略低於 SFP+DTLR 版
 SFP+DTLR + flip,SFP+DTLR refine + 翻轉 TTA(無訓練),test-time,0.8639,formal_test,experiments/voc_sfpdtlr_tta_flip/,2026-07-08,baseline+0.0103(最無爭議乾淨提升)
-TTA_ms(1.0_1.25)+flip_baseline,多尺度(1.0,1.25)+翻轉 TTA(baseline,無訓練),test-time,0.8637,formal_test,experiments/voc_tta_ms125_flip/,2026-07-08,純 TTA 幾乎追平 SFP+flip
+TTA_ms(1.0_1.25)+flip_baseline,多尺度(1.0,1.25)+翻轉 TTA(baseline,無訓練),test-time,0.8637,formal_test,experiments/voc_tta_ms125_flip/,2026-07-08,[EXPLORATORY-VOC-ms 非正式主結果] 純 TTA 幾乎追平 SFP+flip
 MethodA_run1 + flip,訓練頭(Method A)+ 翻轉 TTA,~1.5h+test-time,0.8637,formal_test,experiments/voc_presence_run1_flip/,2026-07-08,訓練頭+flip = baseline+flip
 TTA_flip_baseline,翻轉 TTA(平均 2-view softmax,無訓練),test-time,0.8601,formal_test,experiments/voc_tta_flip/,2026-07-08,baseline+0.0065 且 > SFP+DTLR 0.8590(最便宜的乾淨提升)
-TTA_ms(1.0_1.25_1.5)+flip_baseline,多尺度(1.0,1.25,1.5)+翻轉(baseline),test-time,0.8599,formal_test,experiments/voc_tta_ms1255_flip/,2026-07-08,scale 1.5 反而掉(0.8637→0.8599)尺度峰值=1.25
+TTA_ms(1.0_1.25_1.5)+flip_baseline,多尺度(1.0,1.25,1.5)+翻轉(baseline),test-time,0.8599,formal_test,experiments/voc_tta_ms1255_flip/,2026-07-08,[EXPLORATORY-VOC-ms 非正式主結果] scale 1.5 反而掉(0.8637→0.8599)尺度峰值=1.25
 SFP+DTLR,test-time SFP+DTLR refinement(無訓練),test-time,0.8590,formal_test,experiments/voc_sfp_dtlr_official_eval/,2026-07,前一個 test-time 最佳
 SFP+DTLR_gen,test-time SFP+DTLR gen 變體(無訓練),test-time,0.8582,formal_test,experiments/voc_sfp_dtlr_gen_official_eval/,2026-07,
 MethodA_run1,presence head 4參數 LR0.01/15ep/zglobal(baseline 全凍結),~1.5h(15 ep),0.8565,formal_test,experiments/voc_presence_run1/,2026-07-08,>baseline +0.0029(best=ep12 val0.8201);訓練有效但 < test-time
@@ -17,3 +17,11 @@ MethodA_ep0,presence head 4參數 LR0.01(1 epoch 後中止,舊 run),~1 epoch,0.8
 IABR_retrain,from-scratch IABR 可訓練,未記錄,0.8001,formal_test,-,2026-07,負結果 已關線(drift)
 feature_fusion_DFF2d,full-image L6/L9/L12 DFF2d fusion,未記錄,0.4151,formal_test,-,2026-07,作廢(parity bug 污染)
 CLASS_GATE_s2,test-time 手調 soft 閘門 LOG_BIAS_SCALE2.0,test-time,dropped,subset_only,-,2026-07-08,20圖崩壞0.097(present cosine<0.20 過度壓抑);手調棄跑,校準版=MethodA
+context_baseline_no-TTA,ReCLIP++ baseline no-TTA(Context 59類 PD0.85),8ep base,0.1980,formal_context,experiments/context_eval/base_notta/,2026-07-08,[FORMAL] Context 8ep base(class-order bug 修復後);跨資料集主 baseline;不同資料集勿與 VOC 0.85 直接比
+context_baseline_flip-TTA,baseline + flip TTA(無訓練),test-time,0.2028,formal_context,experiments/context_eval/base_flip/,2026-07-08,[FORMAL] flip 泛化 +0.0048(cf VOC +0.0065);乾淨 dataset-agnostic 提升
+context_agnostic_SFP+DTLR_no-TTA,dataset-agnostic SFP+DTLR gen(PD0.85),test-time,0.1929,formal_context,experiments/context_eval/sfp_notta_pd085/,2026-07-08,[FORMAL] SFP/DTLR 不泛化 -0.0051;VOC 有效 Context 略傷;confound=base未收斂+CONF_THD未正規化
+context_agnostic_SFP+DTLR_flip,agnostic SFP+DTLR + flip,test-time,0.1955,formal_context,experiments/context_eval/sfp_flip_pd085/,2026-07-08,[FORMAL] -0.0025 vs base flip
+context_baseline_PD1.0_diag,baseline @ PD1.0 診斷,test-time,0.0021,diagnostic,experiments/context_eval/base_pd1_notta/,2026-07-08,[DIAGNOSTIC] PD1.0 prune 全部 59 類崩;PD1.0=VOC-specific 設定;gen config 已改 0.85
+VOC_agnostic_SFP+DTLR_entropy-gate,熵正規化可靠度閘門 H/log(C) 取代絕對 CONF_THD/PROXY_CONF_THD(de-VOC code fix),test-time,0.8579,formal_test,experiments/voc_sfp_entgate_eval/,2026-07-08,[FORMAL] VOC 回測(req4):gate 對 20 類近乎 no-op(vs non-gated 0.8582 -0.0003;vs baseline 0.8536 +0.0043)→ 確認修正 dataset-agnostic 不傷 VOC
+context_agnostic_SFP+DTLR_entropy-gate_no-TTA,同上熵 gate;class-count confound 修正,test-time,0.1945,formal_context,experiments/context_sfp_entgate_eval/,2026-07-08,[FORMAL] de-confound(req3c):+0.0016 vs non-gated 0.1929(confound 真實)但仍 -0.0035 vs base 0.1980 → SFP 仍不泛化
+context_agnostic_SFP+DTLR_entropy-gate_flip,同上 + flip TTA,test-time,0.1973,formal_context,experiments/context_sfp_entgate_flip_eval/,2026-07-08,[FORMAL] req3d:+0.0018 vs non-gated 0.1955 但仍 -0.0055 vs base flip 0.2028 → 依 req5 降級 SFP/DTLR=VOC-effective-not-generalizable;confidence-gate confound 已除,base 未收斂 confound 未測

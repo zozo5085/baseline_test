@@ -59,6 +59,11 @@ cfg.MODEL.SFP_DTLR.DTLR_SIGMA_R = 1.50
 cfg.MODEL.SFP_DTLR.DTLR_NUM_ITER = 1
 cfg.MODEL.SFP_DTLR.DTLR_STRUCTURE_GAIN_THD = 0.00
 cfg.MODEL.SFP_DTLR.DTLR_STRUCTURE_CLASSES = [4, 8, 10]
+# Dataset-agnostic entropy-normalized reliability gate (de-VOC code fix 2026-07-08).
+# ENTROPY_GATE off => original absolute max-prob CONF_THD/PROXY_CONF_THD gates (VOC-original).
+cfg.MODEL.SFP_DTLR.ENTROPY_GATE = False
+cfg.MODEL.SFP_DTLR.ENTROPY_TAU_UNREL = 0.0745
+cfg.MODEL.SFP_DTLR.ENTROPY_TAU_REL = 0.1154
 
 cfg.MODEL.PAMR = edict()
 cfg.MODEL.PAMR.NUM_ITER = 10

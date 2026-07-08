@@ -188,6 +188,22 @@ class RECLIPPP(_BaseRECLIPPP):
         self.sfp_conf_thd = float(_cfg_get(sfp_cfg, "CONF_THD", 0.97))
         self.sfp_conf_scale = float(_cfg_get(sfp_cfg, "CONF_SCALE", 10.0))
 
+        # Dataset-agnostic reliability gate (entropy-normalized). Removes the
+        # class-count confound of the absolute max-prob CONF_THD / PROXY_CONF_THD
+        # gates: max-softmax shrinks mechanically as #classes C grows, so a fixed
+        # 0.97 cutoff flags a systematically larger token fraction on 59-class
+        # Context than on 20-class VOC -- an operating-point shift unrelated to true
+        # per-token reliability. H_norm = entropy(softmax(logits*CONF_SCALE))/log(C)
+        # lies in [0,1] for any C, so a single frozen threshold means the same
+        # degree of uncertainty on every dataset. ENTROPY_GATE off => original
+        # max-prob gates (VOC behavior untouched). The two taus are the normalized-
+        # entropy equivalents of the VOC max-prob thresholds at the VOC class count
+        # (worst-case entropy of a distribution whose max-prob equals 0.97 / 0.95 at
+        # C=20), then frozen and applied unchanged to all datasets.
+        self.sfp_entropy_gate = bool(_cfg_get(sfp_cfg, "ENTROPY_GATE", False))
+        self.sfp_entropy_tau_unrel = float(_cfg_get(sfp_cfg, "ENTROPY_TAU_UNREL", 0.0745))
+        self.sfp_entropy_tau_rel = float(_cfg_get(sfp_cfg, "ENTROPY_TAU_REL", 0.1154))
+
         # Margin-aware SFP selection (source 862:625-632) -- left at the
         # shipped 862 defaults (disabled; ranking-only if ever enabled).
         self.sfp_margin_enable = False
@@ -337,6 +353,12 @@ class RECLIPPP(_BaseRECLIPPP):
             prob = torch.softmax(output * float(self.sfp_conf_scale), dim=1)
             conf = prob.max(dim=1)[0]  # [B, H, W]
 
+            # Class-count-invariant reliability coordinate: normalized entropy in
+            # [0,1]. Computed always (cheap); only used as the gate when ENTROPY_GATE.
+            p32 = prob.float().clamp_min(1e-12)
+            ent = -(p32 * p32.log()).sum(dim=1)                       # [B,H,W], nats
+            h_norm = ent / math.log(max(int(prob.shape[1]), 2))       # [B,H,W] in [0,1]
+
             # Class ambiguity: small top-1/top-2 margin means the token is
             # semantically uncertain, even if the max confidence is not very low.
             top2_prob = torch.topk(prob, k=2, dim=1).values  # [B, 2, H, W]
@@ -344,6 +366,7 @@ class RECLIPPP(_BaseRECLIPPP):
 
             flat_score = sfp_score.reshape(B, -1)
             flat_conf = conf.reshape(B, -1)
+            flat_h_norm = h_norm.reshape(B, -1)
             flat_margin = margin.reshape(B, -1)
 
             # Original valid region: SFP-valid and low-confidence.
@@ -369,9 +392,14 @@ class RECLIPPP(_BaseRECLIPPP):
                 rank_score = flat_score
 
             for b in range(B):
+                if getattr(self, "sfp_entropy_gate", False):
+                    # Unreliable = high normalized entropy (class-count-invariant).
+                    conf_unreliable = flat_h_norm[b] > float(self.sfp_entropy_tau_unrel)
+                else:
+                    conf_unreliable = flat_conf[b] < float(self.sfp_conf_thd)
                 valid = (
                     (flat_score[b] > float(self.sfp_min_score)) &
-                    (flat_conf[b] < float(self.sfp_conf_thd))
+                    conf_unreliable
                 )
 
                 if margin_enable and margin_hard_enable:
@@ -436,7 +464,11 @@ class RECLIPPP(_BaseRECLIPPP):
                 dtype=dtype
             )
 
-            high_conf = (conf > float(self.sfp_proxy_conf_thd)).to(dtype).unsqueeze(1)
+            if getattr(self, "sfp_entropy_gate", False):
+                # Reliable proxy source = low normalized entropy (class-count-invariant).
+                high_conf = (h_norm < float(self.sfp_entropy_tau_rel)).to(dtype).unsqueeze(1)
+            else:
+                high_conf = (conf > float(self.sfp_proxy_conf_thd)).to(dtype).unsqueeze(1)
             proxy_source_mask = high_conf * keep_mask
 
             proxy_sum = F.conv2d(
@@ -495,6 +527,14 @@ class RECLIPPP(_BaseRECLIPPP):
                     "proxy_conf_thd": float(getattr(self, "sfp_proxy_conf_thd", 0.0)),
                     "proxy_kernel": int(getattr(self, "sfp_proxy_kernel", 0)),
                     "proxy_available_ratio": float(proxy_available_ratio[b].detach().cpu()),
+
+                    # Confound evidence + calibration hooks (cheap scalars).
+                    "entropy_gate": int(getattr(self, "sfp_entropy_gate", False)),
+                    "h_norm_mean": float(h_norm[b].mean().detach().cpu()),
+                    "unrel_frac_conf": float((conf[b] < float(self.sfp_conf_thd)).float().mean().detach().cpu()),
+                    "unrel_frac_ent": float((h_norm[b] > float(self.sfp_entropy_tau_unrel)).float().mean().detach().cpu()),
+                    "rel_frac_conf": float((conf[b] > float(self.sfp_proxy_conf_thd)).float().mean().detach().cpu()),
+                    "rel_frac_ent": float((h_norm[b] < float(self.sfp_entropy_tau_rel)).float().mean().detach().cpu()),
 
                     "margin_enable": int(getattr(self, "sfp_margin_enable", False)),
                     "margin_lambda": float(getattr(self, "sfp_margin_lambda", 0.0)),

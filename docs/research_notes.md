@@ -683,6 +683,58 @@ Methodological caveat: the multi-scale set (1.25) was selected on the test set (
 a formal claim should fix scales on a held-out split. flip (0.8601) and SFP+DTLR+flip (0.8639)
 are hyperparameter-free and the most defensible clean gains.
 
+### Cross-dataset generalization: PASCAL Context (2026-07-08, journal track)
+
+First non-VOC datapoint for the `JOURNAL_EXTENSION_PLAN.md` Decision Rule. Full root-cause
+narrative in `docs/AUTONOMOUS_SESSION_2026-07-08.md`; classification in
+`docs/GENERALIZATION_PROTOCOL.md`.
+
+Trained a vanilla ReCLIP++ rectification base in THIS repo on PASCAL Context
+(`experiments/context_vanilla_run2/`, model.model, 8 ep — under-trained delta-verification
+base, per-epoch val 0.1106→0.1917). Blocker fixed first: the D:\ReCLIPv3 Context GT labels are
+in **VOC-20-first** class order, not the alphabetical `pascal_context_classes` order the repo's
+text/pseudo used — total class-index mismatch (first run mIoU 0.0027). Text embeddings reordered
+to GT order (top1-in-GT 0.094→0.873) and pseudo regenerated aligned (recall 0.25→0.579) before
+training.
+
+Formal eval (full val 5105, TEST.PD 0.85, `tools/test_tta.py`):
+
+| method | mIoU | Δ vs base no-TTA |
+|---|---|---|
+| baseline no-TTA | 0.1980 | — |
+| baseline flip-TTA | 0.2028 | **+0.0048** |
+| agnostic SFP+DTLR no-TTA | 0.1929 | **−0.0051** |
+| agnostic SFP+DTLR flip | 0.1955 | −0.0025 |
+
+Diagnostic (exploratory): baseline @ PD 1.0 = 0.0021 — PD 1.0 prunes all 59 classes (relies on
+20-class softmax saturation), a VOC-specific eval setting; gen config corrected 1.0→0.85. The
+initial SFP "collapse" to 0.0021 was this PD artifact, not SFP/DTLR (baseline collapses
+identically at PD 1.0).
+
+Read: **flip-TTA generalizes** (+0.0048, cf VOC +0.0065) — clean dataset-agnostic gain.
+**Agnostic SFP/DTLR does NOT** (−0.0051; helped VOC, slightly hurts Context) — looks VOC-specific.
+
+**Entropy-gate de-confound (2026-07-08, DONE).** The user chose a single principled de-confound:
+remove the VOC-calibrated `CONF_THD` / `PROXY_CONF_THD` max-prob gates in code. An entropy-normalized
+reliability gate `H_norm = entropy(softmax(logits·CONF_SCALE))/log(C) ∈ [0,1]` (`ENTROPY_GATE`,
+`model/model_sfp_dtlr.py`) replaces them; the two taus are frozen from the VOC C=20 operating point
+(normalized-entropy equivalents of 0.97/0.95) and applied **unchanged** to all datasets — no
+Context-val tuning. Corrected full-val (configs `config/{voc,context}_test_sfp_dtlr_entgate_cfg.yaml`):
+
+| method | mIoU | Δ vs baseline | Δ vs non-gated |
+|---|---|---|---|
+| VOC gated SFP no-TTA | 0.8579 | +0.0043 (base 0.8536) | −0.0003 (0.8582) |
+| Context gated SFP no-TTA | 0.1945 | **−0.0035** (base 0.1980) | +0.0016 (0.1929) |
+| Context gated SFP flip | 0.1973 | **−0.0055** (base flip 0.2028) | +0.0018 (0.1955) |
+
+The confound was **real but explains only ~1/3 of the gap**: the gate recovered +0.0016 / +0.0018 on
+Context and is a near-no-op on VOC (−0.0003), confirming the fix is genuinely dataset-agnostic. But
+corrected Context SFP stays **negative** (−0.0035 / −0.0055). Per the pre-registered Decision Rule
+(JOURNAL_EXTENSION_PLAN req 5), **SFP/DTLR is downgraded to VOC-effective-but-not-generalizable.**
+Only the confidence-gate confound was removed; the under-trained-base confound (0.198, 8-ep) was left
+untested by user scope (no longer Context training). **flip-TTA remains the sole clean dataset-agnostic
+positive.** Next: pivot to LGAK (`NEW_DIRECTION_LGAK_RESEARCH_PLAN.md`), pending user go.
+
 ## 12. Suggested Evaluation Metrics
 
 Besides mIoU, add:

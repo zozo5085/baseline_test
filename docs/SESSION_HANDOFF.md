@@ -5,7 +5,25 @@
 
 ---
 
-## ⚠️ 2026-07-08 狀態更正(**優先讀這塊**,取代下方 §0 / §1-MethodA / §3 / §4 / §5 中「尚未訓練、voc_presence 乾淨」等已過時敘述)
+## 🟢 2026-07-08(晚,本 session)最新狀態 — 期刊延伸線 + Context 跨資料集(**先讀這塊,取代下方所有更舊敘述**)
+
+**方向切換**:使用者新增 `docs/JOURNAL_EXTENSION_PLAN.md`(期刊延伸線,本 session 執行中)+ `docs/NEW_DIRECTION_LGAK_RESEARCH_PLAN.md`(新方法,**尚未開始,勿碰**)。判準 = JOURNAL plan 的 Decision Rule。VOC 的「所有結果 > 0.8536」是 VOC-only 要求;Context 是不同資料集(baseline ~0.20),用 **delta** 判斷,勿套 0.8536。
+
+**Context 實驗(第一個非 VOC 資料集)已完成:**
+- 🔴 **重大 bug 修復**:D:\ReCLIPv3 的 Context GT label 是 **VOC-20-first 類別順序**,但 repo 的 text embedding + pseudo 是**字母序**(`pascal_context_classes`)→ 全類別 index 錯位 → 任何訓練 mIoU≈0(初跑 0.0027)。已把 text 重排成 GT 順序(`[VOC20]+[39 stuff 字母序]`;top1-in-GT 0.094→0.873),pseudo 用修正 text 重生(對齊 train.txt,recall 0.25→0.579)。字母序 text 備份 `text/context_ViT16_clip_text_alpha.pth`;舊 pseudo `text/context_pseudo_label.json.bak4996`。
+- **base**:`experiments/context_vanilla_run2/best_weight.pth`(model.model,8 ep,per-epoch val 0.1106→0.1917;**未收斂**,delta 驗證用)。
+- **正式 eval(full val 5105,PD 0.85,`tools/test_tta.py`)**:baseline no-TTA **0.1980** / flip **0.2028(+0.0048)** / agnostic SFP+DTLR no-TTA **0.1929(−0.0051)** / SFP+flip **0.1955**。診斷:baseline @ **PD1.0 = 0.0021**(prune 全 59 類;PD1.0 靠 20 類 softmax 飽和 = VOC-specific;gen config 已 1.0→0.85)。
+- **結論(初判)**:**flip-TTA 泛化**(+0.0048,cf VOC +0.0065)= 乾淨 dataset-agnostic 正結果;**agnostic SFP/DTLR 不泛化**(−0.0051)→ Decision Rule 傾向降級。當時兩 confound 未除:(a) base 未收斂(0.198,8ep);(b) CONF_THD/kernel VOC-calibrated 絕對常數。
+
+- 🟢 **entropy-gate de-confound 已做(2026-07-08 晚,本 session)**:使用者選「只做一個 principled 修正」——把 max-prob gate(CONF_THD 0.97 / PROXY_CONF_THD 0.95)換成 entropy-normalized 可靠度 gate `H_norm=entropy(softmax(logits·CONF_SCALE))/log(C)∈[0,1]`(`ENTROPY_GATE`,`model/model_sfp_dtlr.py`;tau=0.0745/0.1154 由 VOC C=20 凍結、套所有資料集、**無 Context 調參**)。修正後 full-val:**VOC gated 0.8579**(vs 0.8582 −0.0003,20 類近乎 no-op → 修正確實 dataset-agnostic)/ **Context gated no-TTA 0.1945**(+0.0016 vs 0.1929,**仍 −0.0035 vs base 0.1980**)/ **Context gated flip 0.1973**(+0.0018,**仍 −0.0055 vs base flip 0.2028**)。**confound 真實但只佔約 1/3**;除掉後 Context SFP 仍負。
+- **判決(依 JOURNAL req5 預註冊規則)**:corrected Context SFP 仍負 delta → **SFP/DTLR 降級為 VOC-effective-but-not-generalizable**。只除了 confidence-gate confound;base 未收斂 confound 未測(使用者 scope = 只做 de-confound,不再訓 Context)。**flip-TTA 是唯一乾淨 dataset-agnostic 正結果。**
+
+**下一步**:轉 LGAK 新方向(`NEW_DIRECTION_LGAK_RESEARCH_PLAN.md`)——**尚未開始,需使用者明確指示才動**(大方向、多小時、架構級)。ADE20K raw 在 D:\ReCLIPv3(per-dataset ckpt 架構不相容,需本 repo 重訓)可留作補充泛化資料點。**勿開始 LGAK,除非使用者指示。**
+已更新:`method_results.csv` / `GENERALIZATION_PROTOCOL.md §2+§6` / `research_notes.md §11` / `AUTONOMOUS_SESSION_2026-07-08.md` / 本檔。新 config:`config/{voc,context}_test_sfp_dtlr_entgate_cfg.yaml`;code:`model/model_sfp_dtlr.py` + `config/configs.py`。
+
+---
+
+## ⚠️ 2026-07-08 狀態更正(voc_presence / MethodA 舊塊,已被上方新塊取代大部分;MethodA 細節仍有效)
 
 - **🔴 2026-07-08 run1 訓練中(PID 30516,detached)**:使用者指示「做A」= 待決定清單的 (A)。已啟動完整 run:LR 0.01 / 15 epoch / MODE `zglobal` / INIT official / **SAVE_DIR `experiments/voc_presence_run1/`**(輸出 `console.log` stdout + `console.err.log` tqdm)。smoke 過(trainable=4、loss finite、train imgs=1464、8.85 it/s)。判準:最終 best_weight 用 **formal test 比 0.8536**(per-epoch val 低 ~0.04,勿直接比);若 per-epoch val 崩向 ~0.80(IABR 式 drift)就停。**勿重啟、勿覆蓋 run1、勿覆蓋 voc_presence 的 ep0 權重。** 完成後 formal test → 寫 `research_notes.md §11` + `updated.md` + 逐檔 commit push `mine`。
 - **Method A 已跑過一輪並中止**:使用者 **2026-07-07 23:45** 啟動 presence 訓練(LR 0.01),為重啟 session 於 **epoch 1 中途 kill**(epoch 0 已完成)。非失敗,是人為中止。

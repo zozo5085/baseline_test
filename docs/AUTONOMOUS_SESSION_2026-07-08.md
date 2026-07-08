@@ -109,3 +109,106 @@
 - `tools/smoke_test_presence.py`、`config/voc_test_classgate_s2_cfg.yaml`、`docs/_infra_map_testtime.md`、本 log、`docs/method_results.csv`。
 
 **方法學誠實備註:** 多尺度集合(1.25)在 test set 上挑選,屬探索性;正式報告尺度應在 held-out 上定。**flip(0.8601)與 SFP+DTLR+flip(0.8639)是無超參、最無爭議的乾淨提升**,建議作主張。所有 TTA 數字經 identity check(0.8536 精確)驗證,`test_tta.py` == `test.py`。
+
+---
+
+## Context delta experiment — root cause & fix (2026-07-08, later)
+
+**Symptom.** First Context vanilla run (`experiments/context_vanilla_run1/`, 8ep) gave
+epoch-0 val mIoU **0.0027** vs VOC's own epoch-0 **0.1142** (40x low). Killed it.
+
+**Diagnosis chain (all model-free checks):**
+- metric (`utils/test_mIoU.mean_iou`): structurally identical to the VOC path (0.8536-verified); Context GT is single-channel class-id, reduce_zero_label 1-59→0-58 correct. NOT the bug.
+- text embedding `context_ViT16_clip_text.pth`: [59,512], normalized, distinct rows, no nan. Well-formed.
+- pseudo recall vs GT: Context **0.25 ≈ random 0.217**, but VOC pseudo recall **0.824** (random 0.092). Context supervision was random.
+- CLIP whole-image top-1 ∈ GT: **0.094 ≈ random** (VOC-pipeline would be high).
+- per-dominant-class CLIP top-1 mode: clean mapping GT label 0-19 → airplane,bicycle,bird,boat,bottle,bus,car,cat,chair,cow,table,dog,horse,motorbike,person,pottedplant,sheep,sofa,train,tvmonitor (frac 0.8-1.0).
+
+**Root cause.** The D:\ReCLIPv3 `SegmentationClassContext` GT labels are in **VOC-20-first** class order; this repo's context text embedding + pseudo were in **alphabetical** (`pascal_context_classes`) order. Total class-order mismatch → model predicts alphabetical index, GT is VOC-first index → every pixel misindexed → mIoU ~0. (D:\ReCLIPv3 applies no label_map either; its own context setup shares this mismatch.)
+
+**Fix.** Derived the full 59-class GT order via Hungarian assignment on CLIP logit-association (objects 20/20 exact; stuff came out cleanly alphabetical). GT order =
+`[20 VOC classes, alphabetical] + [39 remaining context classes, alphabetical]`.
+Reordered the text-embedding rows to this order (alphabetical backed up to
+`text/context_ViT16_clip_text_alpha.pth`). Validation after reorder: CLIP **top1-in-GT
+0.094 → 0.873**. Regenerated pseudo (sliding-window, corrected text, aligned to this
+train.txt) and relaunching training in `experiments/context_vanilla_run2/`.
+Old misaligned pseudo preserved as `text/context_pseudo_label.json.bak4996`.
+
+**Lesson.** A shipped dataset's labels and its text/pseudo can be in different class
+orders. Before training any new dataset: verify CLIP whole-image top-1 ∈ GT >> random on
+a sample (order sanity) — costs 1 min, saves a 4h broken run.
+
+---
+
+## Context fixed-protocol RESULTS (2026-07-08, journal track)
+
+Base: `experiments/context_vanilla_run2/best_weight.pth` (class-order-fixed, 8-epoch
+delta-verification base; per-epoch oracle-val trajectory 0.1106→0.1917, NOT converged).
+Formal eval = `tools/test_tta.py`, full Context val (5105 img), **all at TEST.PD 0.85**.
+
+| # | method | model | mIoU | Δ vs base no-TTA |
+|---|---|---|---|---|
+| 1 | baseline no-TTA        | model.model          | **0.1980** | — |
+| 2 | baseline flip-TTA      | model.model          | **0.2028** | **+0.0048** |
+| 3 | agnostic SFP+DTLR no-TTA | model.model_sfp_dtlr | **0.1929** | **−0.0051** |
+| 4 | agnostic SFP+DTLR flip | model.model_sfp_dtlr | **0.1955** | −0.0025 |
+
+Diagnostic (exploratory): baseline **@ PD 1.0 = 0.0021** (collapse). `TEST.PD 1.0` prunes
+all 59 classes because it relies on 20-class softmax saturation → it is a VOC-specific
+eval setting; the gen config was corrected 1.0→0.85. The initial SFP "collapse" (0.0021)
+was entirely this PD artifact, NOT the SFP/DTLR or the CONF_THD confound (confirmed by
+baseline@PD1.0 collapsing identically). 20-img smoke (SFP +0.011) was sampling noise;
+full-val is the truth.
+
+**Findings.**
+- **flip-TTA generalizes**: +0.0048 on Context (parameter-free, matches VOC +0.0065). Clean formal dataset-agnostic positive.
+- **agnostic SFP/DTLR does NOT generalize**: −0.0051 on Context (helped VOC ~+0.005, hurts Context). Looks VOC-specific.
+- Confounds weakening the SFP refutation: (a) Context base is under-trained (0.198, 8 ep, not ~0.4 converged); (b) CONF_THD/kernel gates are VOC-calibrated absolute constants (audit) — a fully-de-VOC'd SFP (entropy-normalized gate, code change) was NOT tested.
+
+**Decision-Rule input**: flip-TTA = keep (generalizes). agnostic SFP/DTLR = leans "VOC-specific / downgrade", but not cleanly refuted until the two confounds are removed.
+
+---
+
+## Entropy-gate de-confound (2026-07-08 evening) — SFP/DTLR downgraded
+
+**User scope.** "Do ONE principled dataset-agnostic fix: replace the VOC-calibrated
+`CONF_THD` gate with a class-count / entropy-normalized reliability gate so 59-class
+Context is not over-flagged by a systematically lower max-softmax. No Context-val tuning;
+fixed formula usable on VOC/Context/ADE/COCO/City. If corrected Context is still a negative
+delta, downgrade SFP/DTLR to VOC-effective-not-generalizable and pivot to LGAK." (No longer
+Context training — the base-quality confound was deliberately left in place.)
+
+**Code fix** (`model/model_sfp_dtlr.py`, `ENTROPY_GATE`; `config/configs.py` registers the
+keys). Both max-prob gates — `CONF_THD 0.97` (unreliable→refine) and `PROXY_CONF_THD 0.95`
+(reliable→proxy source) — are replaced by a single normalized-entropy coordinate
+`H_norm = entropy(softmax(logits·CONF_SCALE)) / log(C) ∈ [0,1]`, which is class-count-invariant
+(max-prob is not: it shrinks mechanically as C grows). Unreliable = `H_norm > TAU_UNREL`,
+reliable proxy = `H_norm < TAU_REL`. The two taus (0.0745 / 0.1154) are the normalized-entropy
+equivalents of the VOC max-prob thresholds at C=20 (worst-case entropy of a distribution whose
+max-prob is 0.97 / 0.95), **frozen and applied unchanged to every dataset** — a closed-form
+conversion, no data-driven tuning. `ENTROPY_GATE` off ⇒ original gates (VOC behavior untouched).
+
+**Smoke** (same 20 VOC imgs, paired): baseline 0.5539 → non-gated SFP 0.5611 (+0.0072) →
+gated SFP 0.5601 (+0.0062). Gate preserves the SFP delta; code correct.
+
+**Formal full-val results** (`config/{voc,context}_test_sfp_dtlr_entgate_cfg.yaml`):
+
+| method | mIoU | Δ vs baseline | Δ vs non-gated SFP |
+|---|---|---|---|
+| VOC gated SFP no-TTA | 0.8579 | +0.0043 (base 0.8536) | −0.0003 (0.8582) |
+| Context gated SFP no-TTA | 0.1945 | **−0.0035** (base 0.1980) | +0.0016 (0.1929) |
+| Context gated SFP flip | 0.1973 | **−0.0055** (base flip 0.2028) | +0.0018 (0.1955) |
+
+**Findings.**
+- The confound was **real but minor**: the entropy gate recovered +0.0016 (no-TTA) / +0.0018
+  (flip) on Context — the VOC-calibrated gate WAS over-flagging 59-class tokens — but this is
+  only ~1/3 of the −0.0051 gap.
+- The fix is **genuinely dataset-agnostic**: near-no-op on VOC (0.8579 vs 0.8582, −0.0003),
+  because at C=20 the taus reproduce the original operating point by construction.
+- Corrected Context SFP is **still negative** (−0.0035 / −0.0055 vs the matching baseline).
+
+**Verdict (pre-registered Decision Rule, req 5).** Corrected Context SFP remains a negative
+delta ⇒ **SFP/DTLR downgraded to VOC-effective-but-not-generalizable.** Only the
+confidence-gate confound was removed; the under-trained-base confound (0.198, 8-ep) remains
+untested by user scope. **flip-TTA is the sole clean dataset-agnostic positive.** Next: pivot
+to LGAK (`NEW_DIRECTION_LGAK_RESEARCH_PLAN.md`), pending explicit user go.
