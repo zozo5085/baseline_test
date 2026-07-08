@@ -19,7 +19,9 @@
 - **判決(依 JOURNAL req5 預註冊規則)**:corrected Context SFP 仍負 delta → **SFP/DTLR 降級為 VOC-effective-but-not-generalizable**。只除了 confidence-gate confound;base 未收斂 confound 未測(使用者 scope = 只做 de-confound,不再訓 Context)。**flip-TTA 是唯一乾淨 dataset-agnostic 正結果。**
 
 **下一步**:轉 LGAK 新方向(`NEW_DIRECTION_LGAK_RESEARCH_PLAN.md`)——**尚未開始,需使用者明確指示才動**(大方向、多小時、架構級)。ADE20K raw 在 D:\ReCLIPv3(per-dataset ckpt 架構不相容,需本 repo 重訓)可留作補充泛化資料點。**勿開始 LGAK,除非使用者指示。**
-已更新:`method_results.csv` / `GENERALIZATION_PROTOCOL.md §2+§6` / `research_notes.md §11` / `AUTONOMOUS_SESSION_2026-07-08.md` / 本檔。新 config:`config/{voc,context}_test_sfp_dtlr_entgate_cfg.yaml`;code:`model/model_sfp_dtlr.py` + `config/configs.py`。
+已更新:`method_results.csv` / `GENERALIZATION_PROTOCOL.md §2+§6` / `research_notes.md §11` / `AUTONOMOUS_SESSION_2026-07-08.md` / 本檔。新 config:`config/{voc,context}_test_sfp_dtlr_entgate_cfg.yaml`;code:`model/model_sfp_dtlr.py` + `config/configs.py`。已本地 commit `4c16036`(未 push)。
+
+**LGAK(新方向)進度**:使用者已同意「開始 LGAK,但先只做 design review、不實作不訓練」。design review 已完成 → `docs/LGAK_IMPLEMENTATION_REVIEW.md`。結論:計畫 sound 且可實作(forward path 已對 `model.py:462-482` 驗證、layout 已是 `[B,512,H,W]` 可跑 DWConv、無 oracle 洩漏、單一 forward),但**不可照抄實作**:F1(feat 在 `:479` 還餵 decoder,非只 output_q)、F2(插在 normalize 後會破壞單位範數 → 需 re-normalize)必修;F4(α=0 conv 零梯度啟動)建議修;F3(text 條件是 dataset-global mean,語言引導很弱)是設計分歧留給使用者。**等使用者對 review §10 的 4 個決策回覆後才動 code。** 尚未寫任何 LGAK code。
 
 ---
 
