@@ -21,7 +21,9 @@
 **下一步**:轉 LGAK 新方向(`NEW_DIRECTION_LGAK_RESEARCH_PLAN.md`)——**尚未開始,需使用者明確指示才動**(大方向、多小時、架構級)。ADE20K raw 在 D:\ReCLIPv3(per-dataset ckpt 架構不相容,需本 repo 重訓)可留作補充泛化資料點。**勿開始 LGAK,除非使用者指示。**
 已更新:`method_results.csv` / `GENERALIZATION_PROTOCOL.md §2+§6` / `research_notes.md §11` / `AUTONOMOUS_SESSION_2026-07-08.md` / 本檔。新 config:`config/{voc,context}_test_sfp_dtlr_entgate_cfg.yaml`;code:`model/model_sfp_dtlr.py` + `config/configs.py`。已本地 commit `4c16036`(未 push)。
 
-**LGAK(新方向)進度**:使用者已同意「開始 LGAK,但先只做 design review、不實作不訓練」。design review 已完成 → `docs/LGAK_IMPLEMENTATION_REVIEW.md`。結論:計畫 sound 且可實作(forward path 已對 `model.py:462-482` 驗證、layout 已是 `[B,512,H,W]` 可跑 DWConv、無 oracle 洩漏、單一 forward),但**不可照抄實作**:F1(feat 在 `:479` 還餵 decoder,非只 output_q)、F2(插在 normalize 後會破壞單位範數 → 需 re-normalize)必修;F4(α=0 conv 零梯度啟動)建議修;F3(text 條件是 dataset-global mean,語言引導很弱)是設計分歧留給使用者。**等使用者對 review §10 的 4 個決策回覆後才動 code。** 尚未寫任何 LGAK code。
+**LGAK(新方向)進度**:使用者已同意「開始 LGAK,但先只做 design review、不實作不訓練」。design review 已完成 → `docs/LGAK_IMPLEMENTATION_REVIEW.md`。結論:計畫 sound 且可實作(forward path 已對 `model.py:462-482` 驗證、layout 已是 `[B,512,H,W]` 可跑 DWConv、無 oracle 洩漏、單一 forward),但**不可照抄實作**:F1(feat 在 `:479` 還餵 decoder,非只 output_q)、F2(插在 normalize 後會破壞單位範數 → 需 re-normalize)必修;F4(α=0 conv 零梯度啟動)建議修;F3(text 條件是 dataset-global mean,語言引導很弱)是設計分歧留給使用者。
+
+**LGAK 決策 + 實作已完成(2026-07-08 深夜)**:使用者拍板 F3=A(全域 mean gate)、F1=A(refined feat 只餵 output_q)、F4 α=0(不手動 warm)、成功門檻預註冊(identity==baseline / VOC no-TTA ≥ base−0.005 / 有正 delta 才驗 Context / 不拿 VOC-tuned TTA 當成功)。已實作 `model/lgak.py` + `model/model_lgak.py` + 3 configs + `tools/smoke_test_lgak.py` + `config/configs.py` LGAK keys(**未動 `model/model.py`**)。**驗收全過**:identity(α=0,full-val)= **0.8536 整 == baseline**;smoke = trainable 全在 `lgak.`(398,465)、loss 有限、feat_norm out=1.0、F4 bootstrap 實測吻合(α 先動、conv 後動)。**尚未跑 2-3 epoch short run —— 等使用者確認才進 short run。** eval 產物:`experiments/lgak_id_lgak/`(identity)、`experiments/lgak_id_baseline/`(config sanity 0.8536)。訓練 SAVE_DIR 將是 `experiments/voc_lgak_mvp_run1/`。
 
 ---
 

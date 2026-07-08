@@ -2,6 +2,26 @@
 
 > 使用者慣例:每次重大改版在此記錄「改了什麼、為什麼、結果」。最新在上。
 
+## 2026-07-08(深夜)— LGAK-MVP 實作,identity + smoke 通過,待 short run
+
+- **改了什麼**:新方向 LGAK(language-guided adaptive kernel,frozen CLIP dense feature 的
+  *pre-similarity* refinement)。先做 design review(`docs/LGAK_IMPLEMENTATION_REVIEW.md`)把計畫
+  插入點對到真實 `model.py:462-482`,抓到 5 問題(F1 feat 也餵 decoder、F2 插在 normalize 後破壞
+  單位範數、F3 mean(T) 語言條件弱、F4 α=0 conv 零梯度、F5 需 copy-forward),使用者拍板 4 決策後才實作。
+  **MVP only**(無 offset / kernel-mixture / multi-layer)。
+- **交付**:`model/lgak.py`(`TextGatedConvRefiner`:`F_out=normalize(F+α·g·F_refine)`,
+  `g=1+MLP(mean_c(T))` 全域 mean gate,α 零初始)+ `model/model_lgak.py`(subclass baseline、
+  copy-forward、LGAK **只餵 output_q**、decoder 保留原始 feat、freeze-then-append)+ 3 configs
+  (`voc_{train,test}_lgak_mvp` + `voc_test_lgak_identity`)+ `tools/smoke_test_lgak.py` +
+  `config/configs.py` 註冊 LGAK keys。**未動 `model/model.py`**。
+- **為什麼**:F2 re-normalize 保 cosine 校準(避免重演 SFP 的範數/校準 confound);F1 只餵 output_q
+  保 decoder 訓練分布;α=0 保精確 identity;凍 baseline 只訓 LGAK → 結構上不 drift。
+- **驗收(全過)**:**identity(α=0,full-val VOC)= 0.8536 整 == baseline**(缺鍵僅 7 個 LGAK 參數);
+  smoke = trainable **全在 `lgak.`**(398,465)、loss 有限、feat_norm out=1.0000、**F4 bootstrap 實測吻合**
+  (iter0 只有 α 有梯度 grad 0.0062、conv=0;iter1 α≠0 後 conv grad=1.9e-5)。
+- **狀態**:**尚未跑 2-3 epoch short run**(待使用者確認)。成功門檻已預註冊:identity==baseline ✓、
+  VOC no-TTA ≥ baseline−0.005、有正 delta 才驗 Context、不拿 VOC-tuned TTA 當成功依據。
+
 ## 2026-07-07 — Method A 實作完成(trainable soft presence-calibration head),待訓練
 
 - **背景轉向**:放棄救 IABR trainable,改在 ReCLIP++ baseline **rectification stage** 上設計

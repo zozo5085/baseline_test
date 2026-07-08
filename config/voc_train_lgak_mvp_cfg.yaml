@@ -1,0 +1,43 @@
+DATASET:
+  NAME: 'voc'
+  NUM_CLASSES: 20
+  DATAROOT: 'data/VOCdevkit/VOC2012/'
+  SCALE: [2048, 336]
+  RATIO_RANGE: [0.5, 2.0]
+  CROP_SIZE: [336, 336]
+  CAT_MAX_RATIO: 0.75
+  IMG_NORM_CFG:
+    MEAN: [122.771, 116.746, 104.094]
+    STD: [68.501, 66.632, 70.323]
+    RGB: True
+  TEXT_WEIGHT: 'text/voc_ViT16_clip_text.pth'
+  K: 2
+  THRESHOLD: 23
+  REDUCE_ZERO_LABEL: TRUE
+  IGNORE_INDEX: 255
+
+MODEL:
+  FEATURE_EXTRACTOR: 'vit'
+  TEXT_CHANNEL: 512
+  VISUAL_CHANNEL: 768
+  TRAINING: True
+  LGAK:
+    # Train LGAK only: load + freeze the official baseline, train the refiner. alpha=0 init,
+    # learnable (no manual warm value; review F4). Short run 2-3 epochs, formal test each epoch.
+    INIT_FROM: "experiments/official/voc_reclippp_854/best_weight.pth"
+    ALPHA_TRAINABLE: true
+    KERNEL: 3
+    HIDDEN: 128
+
+TRAIN:
+  BATCH_SIZE: 1
+  MAX_EPOCH: 3
+  EPOCH: 3
+  LR: 0.01
+
+TEST:
+  BATCH_SIZE: 1
+
+EVAL_METRIC: "miou"
+SAVE_DIR: "experiments/voc_lgak_mvp_run1/"
+NUM_WORKERS: 4

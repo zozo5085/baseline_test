@@ -81,6 +81,13 @@ cfg.MODEL.PRESENCE.BCE_W = 1.0            # image-level presence BCE weight
 cfg.MODEL.PRESENCE.NEG_POS_W = 0.2       # <1 => suppressing a present class costs 1/NEG_POS_W more
 cfg.MODEL.PRESENCE.REG_W = 0.1           # baseline-preserving regularization weight
 
+# LGAK-MVP (language-guided adaptive kernel refiner) -- model/model_lgak.py.
+cfg.MODEL.LGAK = edict()
+cfg.MODEL.LGAK.INIT_FROM = ""             # official baseline ckpt to load+freeze before training
+cfg.MODEL.LGAK.KERNEL = 3                 # depthwise conv kernel size (MVP: 3)
+cfg.MODEL.LGAK.HIDDEN = 128               # gate MLP hidden width
+cfg.MODEL.LGAK.ALPHA_TRAINABLE = True     # False => alpha frozen at 0 (identity config)
+
 cfg.TRAIN = edict()
 cfg.TRAIN.BATCH_SIZE = 1
 cfg.TRAIN.MAX_EPOCH = 50

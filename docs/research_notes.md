@@ -735,6 +735,28 @@ Only the confidence-gate confound was removed; the under-trained-base confound (
 untested by user scope (no longer Context training). **flip-TTA remains the sole clean dataset-agnostic
 positive.** Next: pivot to LGAK (`NEW_DIRECTION_LGAK_RESEARCH_PLAN.md`), pending user go.
 
+### New direction: LGAK-MVP (language-guided adaptive kernel, 2026-07-08)
+
+Separate track from the journal generalization work (`docs/NEW_DIRECTION_LGAK_RESEARCH_PLAN.md`,
+`docs/LGAK_IMPLEMENTATION_REVIEW.md`). Trainable, low-risk probe of *pre-similarity* feature
+refinement on frozen CLIP: does text-conditioned local aggregation before image-text matching
+help, without breaking baseline calibration?
+
+MVP = text-gated residual depthwise conv, inserted at `model.py:463` (after proj+normalize,
+before output_q), feeding output_q ONLY: `F_out = normalize(F + α·g·PWConv(DWConv(F)))`,
+`g = 1 + MLP(mean_c(T))` (dataset-global text gate), α zero-init. Non-destructive wrapper
+`model/model_lgak.py` (copy-forward, freeze baseline, train LGAK only). Design decisions F1–F5
+and the pre-registered success thresholds are in the review doc.
+
+Verification (2026-07-08): **identity α=0 full-val VOC = 0.8536 == baseline** (exact); smoke
+train clean — only `lgak.*` trainable (398,465 params), finite loss, refined-feature norm 1.0000
+(F2 re-normalize), and the F4 bootstrap confirmed (α moves first, convs receive gradient only
+after α leaves 0). **Short run (2–3 ep) NOT yet started — awaiting user go.**
+
+| method | mIoU | note |
+|---|---|---|
+| LGAK-MVP identity (α=0) | 0.8536 | == baseline, exact (`experiments/lgak_id_lgak/`) |
+
 ## 12. Suggested Evaluation Metrics
 
 Besides mIoU, add:

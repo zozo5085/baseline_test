@@ -283,3 +283,38 @@ All four forks were decided by the user; this doc is now the authoritative MVP s
 **F5 copy-forward in `model_lgak.py`** (no edit to `model.py`).
 
 **Status: awaiting the user's final go-ahead to start writing LGAK code.** No code written yet.
+
+---
+
+## 11. Implementation status (2026-07-08) — code written, identity + smoke PASS
+
+User gave the go-ahead to implement the MVP (constraints: MVP only; new files only; no
+destructive edit to `model/model.py`; no overwrite of experiments; identity → smoke → report,
+no short run yet).
+
+**Files added** (no edit to `model/model.py`):
+- `model/lgak.py` — `TextGatedConvRefiner`: `F_out = normalize(F + α·g·PWConv(DWConv(F)))`,
+  `g = 1 + MLP(mean_c(T))` (dataset-global gate, F3=A), α zero-init. Eval fast-path returns F
+  exactly when α==0 (bit-exact identity); training always runs the re-normalized path (F2).
+- `model/model_lgak.py` — `RECLIPPP(_BaseRECLIPPP)`: freeze-then-append; copy of
+  `model.py:451-511` forward with LGAK feeding `output_q` ONLY and the decoder concat keeping
+  the original `feat` (F1=A).
+- `config/voc_train_lgak_mvp_cfg.yaml`, `config/voc_test_lgak_mvp_cfg.yaml`,
+  `config/voc_test_lgak_identity_cfg.yaml`; `config/configs.py` registers `MODEL.LGAK.*`.
+- `tools/smoke_test_lgak.py`.
+
+**Identity check — PASS.** Full-val VOC, `model.model_lgak` with α=0:
+`the mIOU: 0.8536` == baseline `model.model` `0.8536` on the same config (exact). 7 missing keys
+= the fresh LGAK params (strict=False). Evidence: `experiments/lgak_id_lgak/`,
+`experiments/lgak_id_baseline/`.
+
+**Smoke train (2 iters) — PASS.** `tools/smoke_test_lgak.py`:
+- Only `lgak.*` trainable (398,465 params); baseline fully frozen — no gradient leaked.
+- Finite loss (1.49 → 2.00); refined-feature norm `out = 1.0000` (F2 holds).
+- **F4 bootstrap confirmed empirically:** iter 0 `α 0 → −6.2e-5` (α.grad 0.0062, conv+mlp grad
+  **0.0**); iter 1 (α≠0) conv+mlp grad **1.9e-5** — α unlocks the convs exactly as predicted.
+
+Every §1–§5 prediction held: identity exact (F1/F2), grad only on LGAK, F4 slow start observed.
+
+**Next (gated on user go):** the 2–3 epoch short run per §9, evaluated by the §4 pre-registered
+thresholds (formal no-TTA, no VOC-tuned TTA). **Not started.**
