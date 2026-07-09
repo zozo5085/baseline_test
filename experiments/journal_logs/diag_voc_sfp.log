@@ -1,0 +1,4 @@
+[VOC SFP/DTLR gen no-TTA] N=725 miss_gt=0
+  boundary_band_error = 0.1513  (band_r=3)
+  small_object_acc    = 0.7444  (T<1024px)
+  fp_class_count_img  = 0.8055

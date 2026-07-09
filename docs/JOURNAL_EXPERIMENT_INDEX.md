@@ -77,7 +77,11 @@ VOC N=725(stride 2)。**class = diagnostic — 不進主結果表**(解釋段+�
 | Setting | bnd err | small-obj | FP/img |
 |---|---|---|---|
 | Ctx base / +flip / SFP | 0.6925 / 0.6834 / 0.6897 | 0.1510 / 0.1528 / 0.1431 | 4.5406 / 4.0480 / 3.9902 |
-| VOC base / +flip | 0.1522 / 0.1496 | 0.7502 / 0.7386 | 0.8055 / 0.8110 |
+| VOC base / +flip / SFP | 0.1522 / 0.1496 / 0.1513 | 0.7502 / 0.7386 / 0.7444 | 0.8055 / 0.8110 / 0.8055 |
+
+VOC SFP 列 2026-07-09 補(preds = §1 V4 `experiments/voc_sfp_dtlr_gen_official_eval/`,
+log `journal_logs/diag_voc_sfp.log`)— 同機制:small-obj 侵蝕(0.7502→0.7444)換 boundary 微改善,
+VOC 粗物件統計使淨 delta 仍正。
 
 **Figure** `fig_flip_diag.png`(JournalPaper 根目錄):tool `tools/diag_figure.py`,輸入 C1 vs C2
 save_dirs,picks 2007_007688 / 2007_002611 / 2008_000032(log 見 f6ad5a1 session);diagnostic。
@@ -111,10 +115,13 @@ base confound,已被 §2 converged 取代。Commit `4c16036`(csv 記錄)。
 |---|---|---|---|---|
 | Oracle image-level FP removal | 0.8998 | reference bound | csv row(`5ebb07b`);非實作方法 | ❌ 上限參考,非方法 |
 | IABR retrain | 0.8001 | negative | csv(`5ebb07b`);save_dir 未記錄 | ❌ negative finding 文字 |
-| DFF2d full-image fusion | 0.4151 | **voided** | csv 註明「作廢(parity bug 污染)」 | ❌ **[NEEDS VERIFICATION]** — 數字被 parity bug 污染;tex 中該句已標註,引用前須重驗 |
+| DFF2d full-image fusion | 0.4151 | **voided** | csv 註明「作廢(parity bug 污染)」 | ❌ voided;**tex 已改引 fusion v2 0.6897(2026-07-09)**,0.4151 不再出現於 paper |
+| Fusion v2(identity-verified L9+L12 selective) | 0.6897 | negative(formal test) | `research_notes.md §11`(E01,2026-07-07);save_dir `experiments/voc_l9l12_selective_v2/`;vs 自訓 baseline 0.8451 | ❌ Negative Findings 文字(tex 引用中) |
 | CLASS_GATE 手調 sweep | 0.097 | negative(subset) | csv(`5ebb07b`);20-img subset only | ❌ subset、手調;negative 文字需帶 subset 註記 |
 | Method C photometric flicker | cov AUC 0.186 | negative | commit `cb9b4cb` message + `docs/research_notes.md` | ❌ negative finding 文字 |
-| PAMR hurts sharp logits | (無數字) | claim | **無紀錄數字** | ❌ **[NEEDS VERIFICATION]** — tex 已標註;補跑或刪句 |
+| PAMR full-image res 10 iter | 0.8361 | negative(formal, official ckpt) | cfg `config/voc_test_pamr_official_fullres_cfg.yaml`;save_dir `experiments/voc_pamr_fullres_official_eval/`(1449 .pt);csv 2026-07-09;**recompute 驗證精確重現**(`tools/recompute_miou.py`) | ❌ Negative Findings 文字(tex 引用中) |
+| PAMR token-grid 1/3/10 iter | 0.8128 / 0.7250 / 0.5843 | negative(diagnostic) | save_dirs `voc_pamr_token_iter1_eval/`,`voc_pamr_token_iter3_eval/`,`voc_pamr_official_eval/`(各 1449 .pt);0.8128 recompute 驗證 | ❌ 同上 |
+| PAMR identity(0 iter) | 0.8536 | sanity | `experiments/diag_pamr_identity/` | ❌ sanity(wrapper 無副作用) |
 | TTA identity check | 0.8536 | sanity | csv(`5ebb07b`);`experiments/voc_tta_identity/` | ❌ sanity(證明 test_tta==test.py) |
 | Method A identity(γ=0)| 0.8536 | sanity | csv;`experiments/diag_presence_identity/` | ❌ sanity |
 | Method A ep0(舊 run) | 0.8442 | superseded | csv;`experiments/voc_presence/` | ❌ 舊 run |
@@ -124,4 +131,21 @@ base confound,已被 §2 converged 取代。Commit `4c16036`(csv 記錄)。
 
 - 主表/ablation/runtime/diagnostic/flip 全部數字 ↔ `method_results.csv` 或 `journal_logs/*` 一一對上(§1–§5)。
 - 衍生量核驗:flip≈2×(29.1/14.7=1.98、47.8/24.3=1.97)、SFP +26–37%(1.255/1.374)、entropy gate <2%(0.5%/1.3%)、VRAM Δ≤16MiB(7/16)、"recovers roughly a quarter"(0.0014/0.0059≈24%,原文 "about a third" 已修正)。
-- **[NEEDS VERIFICATION] 標註 2 處**(標註不刪句):①PAMR 句 — 無任何紀錄數字;②DFF2d 句 — 0.4151 在 csv 標記作廢(parity bug)。
+- ~~[NEEDS VERIFICATION] 標註 2 處~~ **兩處已解(2026-07-09)**:①PAMR 句 — 數字原在 `research_notes.md`(2026-07-07 全 full-val),0.8361/0.8128 由 `tools/recompute_miou.py` 從 saved preds 精確重現後寫入 tex+csv(§8);②DFF2d 句 — 改引 fusion v2 0.6897(formal,§8),作廢的 0.4151 不再出現於 paper。tex 現無任何 \TODO。
+
+## 10. SFP flagged-fraction stats(paper `tab:flagged_fraction`;diagnostic)— 2026-07-09
+
+Tool `tools/sfp_stats_extract.py`(gen 設定單次 forward 同時記兩種 gate 比例;no-TTA,full val)。
+JSON `experiments/sfp_stats_extract/{voc_gen,context_gen}.json`;log `journal_logs/sfp_stats_{voc,context}.log`。
+VOC = official ckpt + gen cfg(§1 V4 同設定);Context = converged ckpt + gen cfg(§2 C3 同設定)。
+
+| stat(mean over images) | VOC(C=20,N=1449) | Context(C=59,N=5105) |
+|---|---|---|
+| unrel_frac_conf(max-prob 0.97) | 0.3465 | 0.7254 |
+| unrel_frac_ent(tau 凍結於 C=20) | 0.3168 | 0.6818 |
+| ratio(實際 rewrite,capped) | 0.2605 | 0.5444 |
+| proxy_available_ratio | 0.9932 | 0.7433 |
+| h_norm_mean | 0.0890 | 0.2933 |
+
+解讀:class-count confound 真實但小(gate 換掉只回收 ~4pt/38pt),與 mIoU 「recovers ~1/4」吻合;
+Context 實際被 rewrite 的 token >54% 且 proxy 支撐少 26% → rewrite 侵蝕主導,呼應 Table IV/diagnostics。

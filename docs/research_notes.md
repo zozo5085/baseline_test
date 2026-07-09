@@ -771,6 +771,7 @@ converged base N=1021 (stride 5); VOC N=725 (stride 2):
 | Context | SFP/DTLR no-TTA | 0.6897 | 0.1431 (↓worse) | 3.99 |
 | VOC | baseline no-TTA | 0.1522 | 0.7502 | 0.81 |
 | VOC | + flip-TTA | **0.1496** | 0.7386 | 0.81 |
+| VOC | SFP/DTLR no-TTA | 0.1513 | 0.7444 (↓same signature) | 0.81 |
 
 Mechanism (paper §"Why flip transfers but purification does not"): **flip-TTA** = parameter-free
 symmetric average → mild uniform denoise: sharpens boundaries (both datasets) + cancels view-dependent
