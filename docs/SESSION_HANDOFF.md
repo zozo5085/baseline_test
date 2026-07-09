@@ -1,11 +1,56 @@
 # SESSION HANDOFF — ReCLIP++ C-USS 研究(貼上即可接續)
 
 > **給下一個 session 的你**:這份是可直接貼上的接手 prompt。讀完本檔後,**不要重新探索、不要重跑已完成的診斷**,直接從 §5「下一步」開工。所有數字用 4 位小數逐字沿用,不要四捨五入進記錄。基準線是 **官方 checkpoint 0.8536**,使用者的硬性要求:**所有任務結果一律要 > 0.8536**。
-> 最後更新:2026-07-08(前一 session:發現 voc_presence 非乾淨、已 formal-test ep0 ckpt = 0.8442;詳見下方更正塊)。
+> 最後更新:**2026-07-09**(統整交接版;歷史逐步敘事保留在下方)。
 
 ---
 
-## 🟢 2026-07-08(晚,本 session)最新狀態 — 期刊延伸線 + Context 跨資料集(**先讀這塊,取代下方所有更舊敘述**)
+## 🟢 統整交接 — 2026-07-09(**只讀這塊即可開工;下方全部是歷史細節**)
+
+**TL;DR**:期刊 = **Framing A 泛化 audit,已鎖定**。SFP/DTLR 經雙重 de-confound(entropy gate + converged base)後在 Context 仍負 → **正式降級 = VOC-effective / not-generalizable,勿再 rescue**。**flip-TTA 是唯一乾淨 dataset-agnostic 正結果**(VOC +0.0065 / Context +0.0061)。期刊 Table IV/V 已完成,I/II 有 2/5 資料集。LGAK 封存為下一篇方向。**10 個 commit 未 push**(`5ebb07b`…`a858563`)。
+
+### 1. 研究判決(已定案,勿重開)
+- **SFP/DTLR 不泛化**:8-ep Context −0.0051 → 除 confidence-gate confound(entropy gate,tau 由 VOC C=20 凍結)仍 −0.0035 → 除 under-train confound(converged base 0.2412)仍 **−0.0059 / entgate −0.0045**。兩 confound 皆除、預註冊規則觸發 → 降級。
+- **flip-TTA 泛化**:VOC 0.8536→0.8601、Context converged 0.2412→0.2473。diagnostics(N=1021/725):Context 三指標全改善(bnd 0.6925→0.6834、small-obj 0.1510→0.1528、FP 4.54→4.05);機制 = 無參數對稱平均,沒有可被新資料集 mistune 的 prior。
+- **失敗已定位(Table IV)**:Context 傷害源 = **CP-SFP 鄰域 rewrite**(含 rewrite 全負 −0.0046~−0.0067;selection+DTLR-only = 0.2422 = **+0.0010** vs base,且 VOC 保 +0.0042)。⚠ DTLR-only 正值 = **post-hoc 觀察,不得升格 formal 泛化主張**,需 ADE 預註冊確認。
+- 防重踩 bug(已修):Context GT label 是 **VOC-20-first 順序**(text/pseudo 已重排,top1-in-GT 0.094→0.873;字母序備份 `text/context_ViT16_clip_text_alpha.pth`);**TEST.PD 1.0 是 VOC-specific**(Context 用 0.85;PD1.0 → 0.0021 全類 prune 崩)。
+
+### 2. 關鍵數字(formal、verbatim;每筆完整溯源見 `docs/JOURNAL_EXPERIMENT_INDEX.md`)
+- **VOC**(official ckpt `experiments/official/voc_reclippp_854/`,PD 1.0):base **0.8536** / flip **0.8601** / SFP legacy 0.8590 / SFP gen 0.8582 / gen+entgate 0.8579 / gen+flip 0.8639 / MethodA 0.8565(VOC-only secondary)。
+- **Context converged**(ckpt `experiments/context_vanilla_converged/best_weight.pth`,EPOCH30 best ep17 val 0.2341,PD 0.85):base **0.2412** / flip **0.2473** / SFP gen **0.2353** / gen+flip 0.2383 / entgate **0.2367** / entgate+flip 0.2400。
+- **Ablation(no-TTA)**:VOC −DTLR 0.8563 / −proxy 0.8581 / −CPSFP 0.8578;Context 0.2345 / 0.2366 / **0.2422**。
+- **Runtime**(5090,batch1,50-img):VOC 14.7 / flip 29.1 / SFP 20.2 / entgate 20.3 / SFP+flip 39.9 ms;Context 24.3 / 47.8 / 30.5 / 30.9 / 60.6;flip≈2×、SFP +26-37%、entgate <2%、VRAM Δ≤16MiB、全 test-time 0 params。
+- **Exploratory(附錄限定,VOC-val 選 scale)**:ms 0.8661 / 0.8643 / 0.8637 / 0.8599。**8-ep Context 全列 superseded**(0.1980 等,勿再引用為現行)。
+
+### 3. 期刊 paper(Desktop `C:\Users\NUTC2507\Desktop\school\03_論文投稿與計畫\02_2026_JournalPaper\`)
+- `sections/4_experiments.tex`:converged 主表 + flip-transfer 表 + Diagnostic Analysis(指標定義/why-flip/why-SFP-fails/audit 意義)+ §Component Ablation + §Runtime and Cost + `fig_flip_diag.png`。**main.tex 編譯 0 錯**(pdflatex 驗證過)。
+- ⚠ **2 處 `\TODO{NEEDS VERIFICATION}`**:①PAMR 句(全庫無紀錄數字)②DFF2d 0.4151(csv 標「作廢 parity bug」)。引用前須補驗或刪句。
+- `JOURNAL_STATUS.md` = 表就緒度/缺口權威清單:Table I/II 2/5 資料集、III VOC 完 + Context legacy n/a by design、**IV/V DONE**。
+
+### 4. LGAK(封存 = future work / 下一篇,不進 journal 主實驗)
+`model/lgak.py` + `model/model_lgak.py` + 3 configs + `tools/smoke_test_lgak.py`(未動 `model/model.py`)。identity(α=0,full-val)= **0.8536 整**;smoke 過(trainable 398,465 全在 `lgak.`、F4 bootstrap 實測吻合)。**未跑 short run —— 未經使用者授權勿動。** 權威 spec = `docs/LGAK_IMPLEMENTATION_REVIEW.md`(F1-F5 決議 + 預註冊成功門檻)。
+
+### 5. 本輪新增可重用工具
+- `ENTROPY_GATE`(`model_sfp_dtlr.py`,class-count-invariant 可靠度 gate)+ component 開關 `PROXY_ENABLE/DTLR_ENABLE/CPSFP_UPDATE`(預設 True=原行為;回歸 gate 0.5611 驗證)+ `test_tta.py --sfp_disable dtlr|proxy|cpsfp`。
+- `tools/diag_metrics.py`(bnd/small-obj/FP,從 saved .pt+GT,免重跑模型)、`tools/diag_figure.py`(flip diff-map)、`tools/bench_runtime.py`(CUDA-synced timing)。
+- 證據保全:`experiments/journal_logs/`(7 個 eval log 永久保存)+ `docs/JOURNAL_EXPERIMENT_INDEX.md`(每筆 10 欄位溯源:config/log/save_dir/commit/main-table 資格)。
+
+### 6. 開放項(全部等使用者指示,勿自行啟動)
+1. **PAMR**:補跑數字或刪 tex 句(小時級)。
+2. **flagged-fraction 表**:stats log 已在 code,抽數即可(小)。
+3. **ADE20K**(唯一大項,optional breadth + DTLR-only 預註冊確認場;先驗 GT class order)。
+4. **push `mine`**:10 commits(`5ebb07b`…`a858563`)。**絕不 push origin。**
+5. Q1-Q3 質性圖(可選;Q4 已有)。
+
+### 7. 紀律(不可違反)
+formal 只用 no-TTA + flip;VOC-val 選的 multi-scale 永遠 exploratory;**不再 rescue SFP**;DTLR-only 主張需 ADE 預註冊;每實驗新 SAVE_DIR;勿覆蓋 official ckpt;數字 4 位小數 verbatim;「>0.8536」僅 VOC,Context 看 delta;ML python = `C:\Users\NUTC2507\miniconda3\envs\reclip5090\python.exe`。
+
+### 8. 檔案地圖
+repo:`JOURNAL_EXPERIMENT_INDEX.md`(溯源)→ `method_results.csv`(mIoU 帳本)→ `JOURNAL_10PAGE_EXPERIMENT_PLAN.md`(計畫+framing 決議)→ `GENERALIZATION_PROTOCOL.md`(formal 規則)→ `research_notes.md §11`(敘事)。paper:Desktop `JOURNAL_STATUS.md` + `sections/4_experiments.tex`。
+
+---
+
+## 🕐 歷史逐步敘事 2026-07-08~09(已被上方統整取代;僅細節查閱用)
 
 **方向切換**:使用者新增 `docs/JOURNAL_EXTENSION_PLAN.md`(期刊延伸線,本 session 執行中)+ `docs/NEW_DIRECTION_LGAK_RESEARCH_PLAN.md`(新方法,**尚未開始,勿碰**)。判準 = JOURNAL plan 的 Decision Rule。VOC 的「所有結果 > 0.8536」是 VOC-only 要求;Context 是不同資料集(baseline ~0.20),用 **delta** 判斷,勿套 0.8536。
 
