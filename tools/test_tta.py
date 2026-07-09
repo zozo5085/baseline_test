@@ -62,6 +62,10 @@ def get_parser():
     parser.add_argument('--limit', type=int, default=0, help='if >0, only evaluate the first N images (smoke)')
     parser.add_argument('--save_dir', default=None, help='override cfg.SAVE_DIR (fresh dir per run)')
     parser.add_argument('--load_path', default=None, help='override cfg.LOAD_PATH (e.g. a run1 best_weight)')
+    parser.add_argument('--nonstrict', action='store_true',
+                        help='force strict=False load (for ckpts that omit the frozen CLIP backbone)')
+    parser.add_argument('--sfp_disable', default='',
+                        help='comma list of SFP components to disable for ablation: dtlr,proxy,cpsfp')
     return parser.parse_args()
 
 
@@ -114,6 +118,13 @@ def test():
         cfg.SAVE_DIR = args.save_dir
     if args.load_path:
         cfg.LOAD_PATH = args.load_path
+    if getattr(args, 'sfp_disable', ''):
+        _ablate = {'dtlr': 'DTLR_ENABLE', 'proxy': 'PROXY_ENABLE', 'cpsfp': 'CPSFP_UPDATE'}
+        for tok in args.sfp_disable.split(','):
+            tok = tok.strip().lower()
+            if tok:
+                setattr(cfg.MODEL.SFP_DTLR, _ablate[tok], False)
+                print(f'[ablate] {_ablate[tok]} = False')
     Path(cfg.SAVE_DIR).mkdir(parents=True, exist_ok=True)
     RECLIPPP, ReCLIP = load_model_classes(args.model_module)
 
@@ -124,7 +135,7 @@ def test():
 
     weight = torch.load(cfg.LOAD_PATH)
     new_weight = {(k[7:] if k.startswith("module.") else k): v for k, v in weight.items()}
-    strict_load = args.model_module == "model.model"
+    strict_load = (args.model_module == "model.model") and not args.nonstrict
     missing, unexpected = model.load_state_dict(new_weight, strict=strict_load)
     if not strict_load:
         print("[Load] missing keys:", len(missing), " unexpected keys:", len(unexpected))

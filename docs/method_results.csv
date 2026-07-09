@@ -32,3 +32,9 @@ context_converged_agnostic_SFP+DTLR_no-TTA,converged base agnostic SFP+DTLR gen,
 context_converged_agnostic_SFP+DTLR_flip,同上 + flip,test-time,0.2383,formal_context,experiments/context_conv_eval/sfp_flip/,2026-07-09,[FORMAL] -0.0090 vs base flip 0.2473
 context_converged_SFP+DTLR_entropy-gate_no-TTA,converged base + entropy-gate(de-VOC),test-time,0.2367,formal_context,experiments/context_conv_eval/entgate_notta/,2026-07-09,[FORMAL] de-confound 後仍負 -0.0045 vs base(+0.0014 vs plain gen,同 8ep 模式)→ 兩 confound 皆除 SFP 仍不泛化
 context_converged_SFP+DTLR_entropy-gate_flip,同上 + flip,test-time,0.2400,formal_context,experiments/context_conv_eval/entgate_flip/,2026-07-09,[FORMAL] -0.0073 vs base flip;★SFP/DTLR 正式降級 = VOC-effective-not-generalizable(both confounds removed)
+voc_ablate_-DTLR,Table IV ablation:selection+CP-SFP only(DTLR off),test-time,0.8563,formal_test,experiments/voc_ablate_nodtlr/,2026-07-09,[ABLATION formal] +0.0027 vs base;VOC 增益主要來自 DTLR
+voc_ablate_-proxy,Table IV:CP-SFP w/o proxy + DTLR(proxy off),test-time,0.8581,formal_test,experiments/voc_ablate_noproxy/,2026-07-09,[ABLATION formal] +0.0045;proxy 只貢獻 +0.0001
+voc_ablate_-CPSFP,Table IV:selection + DTLR only(CP-SFP rewrite off),test-time,0.8578,formal_test,experiments/voc_ablate_nocpsfp/,2026-07-09,[ABLATION formal] +0.0042;DTLR-only 保住大部分 VOC 增益
+context_ablate_-DTLR,Table IV(converged base):CP-SFP only,test-time,0.2345,formal_context,experiments/context_ablate_nodtlr/,2026-07-09,[ABLATION formal] -0.0067 vs base 0.2412;rewrite 為主要傷害源
+context_ablate_-proxy,Table IV:CP-SFP w/o proxy + DTLR,test-time,0.2366,formal_context,experiments/context_ablate_noproxy/,2026-07-09,[ABLATION formal] -0.0046
+context_ablate_-CPSFP,Table IV:selection + DTLR only,test-time,0.2422,formal_context,experiments/context_ablate_nocpsfp/,2026-07-09,[ABLATION formal] ★+0.0010 vs base — Context 失敗定位於 CP-SFP rewrite;DTLR-only 為 post-hoc 觀察,依 protocol 不得升格 formal 泛化主張,需 ADE 預註冊確認

@@ -217,13 +217,16 @@ class RECLIPPP(_BaseRECLIPPP):
         self.sfp_last_outlier_mask = None
 
         # Proxy-Guided CP-SFP (source 862:646-650).
-        self.sfp_proxy_enable = True
+        # PROXY_ENABLE / DTLR_ENABLE / CPSFP_UPDATE are component-ablation switches
+        # (Table IV). Defaults True == shipped behavior, zero change to existing configs.
+        self.sfp_proxy_enable = bool(_cfg_get(sfp_cfg, "PROXY_ENABLE", True))
         self.sfp_proxy_lambda = float(_cfg_get(sfp_cfg, "PROXY_LAMBDA", 2.00))
         self.sfp_proxy_conf_thd = float(_cfg_get(sfp_cfg, "PROXY_CONF_THD", 0.95))
         self.sfp_proxy_kernel = int(_cfg_get(sfp_cfg, "PROXY_KERNEL", 5))
+        self.sfp_cpsfp_update = bool(_cfg_get(sfp_cfg, "CPSFP_UPDATE", True))
 
         # SFP-selected Domain-Transform Logit Refinement (source 862:661-668).
-        self.sfp_dtlr_enable = True
+        self.sfp_dtlr_enable = bool(_cfg_get(sfp_cfg, "DTLR_ENABLE", True))
         self.sfp_dtlr_beta = float(_cfg_get(sfp_cfg, "DTLR_BETA", 1.20))
         self.sfp_dtlr_sigma_s = float(_cfg_get(sfp_cfg, "DTLR_SIGMA_S", 70.0))
         # DTLR_SIGMA_S_REL > 0 replaces the absolute sigma_s with
@@ -426,6 +429,11 @@ class RECLIPPP(_BaseRECLIPPP):
                 self.sfp_debug_maps["sfp_outlier_mask"] = outlier_mask.detach().float().cpu()
                 self.sfp_debug_maps["sfp_confidence"] = conf.detach().float().cpu()
                 self.sfp_debug_maps["sfp_margin"] = margin.detach().float().cpu()
+
+        if not getattr(self, "sfp_cpsfp_update", True):
+            # Ablation (Table IV "selection+DTLR only"): the outlier mask above is
+            # computed and cached for DTLR, but the CP-SFP rewrite itself is skipped.
+            return output
 
         update_mask = outlier_mask.to(device=device, dtype=dtype).unsqueeze(1)
         keep_mask = 1.0 - update_mask
