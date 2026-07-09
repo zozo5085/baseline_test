@@ -759,6 +759,28 @@ VOC-effective-but-not-generalizable.** flip-TTA is the sole clean dataset-agnost
 **Framing A (generalization audit) is locked**; per the pre-registered rule the negative result means
 no ADE run is needed to settle the SFP question (ADE would only broaden the flip-TTA / baseline claim).
 
+**Diagnostics (2026-07-09, Framing A #2 — flip-TTA consolidation).** Computed from saved argmax
+predictions + GT (`tools/diag_metrics.py`, reduce_zero_label matched): boundary-band error (band r3,
+↓), small-object pixel accuracy (GT CC <1024px, ↑), false-positive class count per image (↓). Context
+converged base N=1021 (stride 5); VOC N=725 (stride 2):
+
+| dataset | setting | bnd err ↓ | small-obj ↑ | FP cls/img ↓ |
+|---|---|---|---|---|
+| Context | baseline no-TTA | 0.6925 | 0.1510 | 4.54 |
+| Context | + flip-TTA | **0.6834** | **0.1528** | **4.05** |
+| Context | SFP/DTLR no-TTA | 0.6897 | 0.1431 (↓worse) | 3.99 |
+| VOC | baseline no-TTA | 0.1522 | 0.7502 | 0.81 |
+| VOC | + flip-TTA | **0.1496** | 0.7386 | 0.81 |
+
+Mechanism (paper §"Why flip transfers but purification does not"): **flip-TTA** = parameter-free
+symmetric average → mild uniform denoise: sharpens boundaries (both datasets) + cancels view-dependent
+hallucinations (Context FP 4.54→4.05) **without** eroding structure (small-obj preserved/↑) → same
+gain on VOC (+0.0065) and Context (+0.0061). **SFP/DTLR** = selects "unreliable" tokens + VOC-calibrated
+domain-transform smoothing: on 59-class Context it cuts hallucinations (FP→3.99) but **erodes small
+objects** (0.151→0.143) → net −0.0059; intrinsic (worse on a stronger base). Qualitative figure
+`fig_flip_diag.png` (flip-vs-baseline diff maps) in the JournalPaper folder. LaTeX
+`sections/4_experiments.tex` + `JOURNAL_STATUS.md` updated with converged results + diagnostics.
+
 ### New direction: LGAK-MVP (language-guided adaptive kernel, 2026-07-08)
 
 Separate track from the journal generalization work (`docs/NEW_DIRECTION_LGAK_RESEARCH_PLAN.md`,
