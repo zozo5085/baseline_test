@@ -35,12 +35,28 @@
 - `tools/diag_metrics.py`(bnd/small-obj/FP,從 saved .pt+GT,免重跑模型)、`tools/diag_figure.py`(flip diff-map)、`tools/bench_runtime.py`(CUDA-synced timing)。
 - 證據保全:`experiments/journal_logs/`(7 個 eval log 永久保存)+ `docs/JOURNAL_EXPERIMENT_INDEX.md`(每筆 10 欄位溯源:config/log/save_dir/commit/main-table 資格)。
 
-### 6. 開放項(全部等使用者指示,勿自行啟動)
-1. **PAMR**:補跑數字或刪 tex 句(小時級)。
-2. **flagged-fraction 表**:stats log 已在 code,抽數即可(小)。
-3. **ADE20K**(唯一大項,optional breadth + DTLR-only 預註冊確認場;先驗 GT class order)。
-4. **push `mine`**:10 commits(`5ebb07b`…`a858563`)。**絕不 push origin。**
+### 6. 開放項(2026-07-09 深夜更新:第0/1級全清,ADE 前置備妥等 go)
+1. ~~PAMR~~ **已解(免補跑)**:數字本就在 research_notes(2026-07-07 full-val,save_dir 各 1449 .pt)。
+   `tools/recompute_miou.py` 重算 0.8361(full-res 10it)/0.8128(token 1it)精確重現 → tex+csv+index。
+   全設定負:0.8361/0.8128/0.7250/0.5843;identity 0.8536 精確。
+2. ~~flagged-fraction~~ **完成**:`tools/sfp_stats_extract.py`(gen 一次跑同得兩 gate 比例,full val)。
+   unrel conf/ent:VOC 0.3465/0.3168,Context 0.7254/0.6818;rewrite 0.2605/0.5444;proxy avail
+   0.9932/0.7433 → confound 真實但小(~4/38pt,吻合 mIoU 回收 ~1/4),rewrite 侵蝕主導。
+   tex 新表 `tab:flagged_fraction`;index §10。
+3. **ADE20K:等使用者 go(唯一未動大項)**。已完成:預註冊(protocol §8,commit 先於任何 ADE 數字)、
+   完整性檢查(class order 0/150 錯位、text recipe cosine 0.999999 驗證後生成
+   `text/ade_ViT16_clip_text.pth`、top1-in-GT 0.527≈8×random、GT 值域 OK);**出貨 pseudo 錯位不可用**
+   (recall 0.235≈chance 且對影像位移不變 → 行序不合本機 listdir,不可回復),重生腳本
+   `tools/ade_pseudo_regen.py`(smoke 3.2 img/s、recall 0.715)。configs:
+   `config/ade_{train_converged,test_local}_cfg.yaml`。
+   **待 go:pseudo 重生 ~1.75h → 訓練 30ep ~20h(train.py 含 0.08s/img sleep;若移除 ≈9h)→ 固定 battery。**
+4. ~~push mine~~ **完成**(`5ebb07b`…`629afc7` 共 11 個,本 session 又 +3)。**絕不 push origin。**
 5. Q1-Q3 質性圖(可選;Q4 已有)。
+6. **bootstrap 顯著性(新)**:`tools/bootstrap_significance.py`(paired per-image,10k,seed 0)。
+   VOC:flip +0.0065 CI[+0.0022,+0.0111] p=0.0052;SFP gen +0.0046 CI[+0.0025,+0.0069] p<0.0002。
+   Context 結果見 `experiments/bootstrap_significance/context.json`(session 末尾完成,記錄於 index)。
+7. **其他本 session 完成**:VOC SFP diagnostic 列(bnd 0.1513/small-obj 0.7444/FP 0.8055,N=725)進 tex 表;
+   DFF2d TODO 解(tex 改引 fusion v2 0.6897);tex 無任何 \TODO,main.tex 編譯 0 錯(6 頁)。
 
 ### 7. 紀律(不可違反)
 formal 只用 no-TTA + flip;VOC-val 選的 multi-scale 永遠 exploratory;**不再 rescue SFP**;DTLR-only 主張需 ADE 預註冊;每實驗新 SAVE_DIR;勿覆蓋 official ckpt;數字 4 位小數 verbatim;「>0.8536」僅 VOC,Context 看 delta;ML python = `C:\Users\NUTC2507\miniconda3\envs\reclip5090\python.exe`。
@@ -205,12 +221,31 @@ python tools\train.py --cfg config\voc_train_presence_cfg.yaml --model RECLIPPP 
 
 ---
 
-## 8. 貼上用的接手 prompt(複製下面這段給新 session)
+## 8. 貼上用的接手 prompt(複製下面這段給新 session;2026-07-09 更新,舊 Method A 版已淘汰)
 
 ```
-讀 D:\ReCLIPP_Test\docs\SESSION_HANDOFF.md 接續 ReCLIP++ 研究。
-現況:Method A(model/model_presence.py)已實作、identity 0.8536 驗過、已 push(5d11af2),
-尚未訓練,無 process 在跑。第一步:確認 EPOCH(建議降 50→15)後啟動 Method A 訓練
-(config/voc_train_presence_cfg.yaml, --model_module model.model_presence),掛 drift tripwire。
-基準 0.8536,所有結果要 > 0.8536。勿 push origin、勿覆蓋 official ckpt、勿重跑已完成診斷。
+讀 D:\ReCLIPP_Test\docs\SESSION_HANDOFF.md 的「🟢 統整交接 2026-07-09」區塊(其餘是歷史,勿全讀),
+接續期刊 Framing A 泛化 audit。按需再讀:GENERALIZATION_PROTOCOL.md(改預註冊前)、
+JOURNAL_EXPERIMENT_INDEX.md(記錄數字時)、Desktop 02_2026_JournalPaper\JOURNAL_STATUS.md(動 tex 前)。
+
+依 2026-07-09 優先序執行:
+【第0級,先清】
+1. push mine 補上 10 commits(5ebb07b…a858563;絕不 push origin)
+2. flagged-fraction 抽數(model_sfp_dtlr stats log 已有)→ 填表
+3. VOC+SFP diagnostic 列:tools/diag_metrics.py 吃 experiments/voc_sfp_dtlr_gen_official_eval/
+   既有 preds,免重跑模型
+4. 4_experiments.tex 兩處 TODO 之 DFF2d:標作廢(parity bug)或刪句
+【第1級】
+5. PAMR 補跑一個 formal 設定解另一 TODO(給 audit 第三個 refinement;負結果照 formal 規則記)
+6. per-image bootstrap 顯著性:flip 與 SFP 在 VOC/Context 的 delta(saved preds+GT,純分析)
+【第2級,唯一大項】
+7. ADE20K:(a) 先把 DTLR-only 假說+成功門檻預註冊寫進 GENERALIZATION_PROTOCOL.md
+   (必須在看到任何 ADE 數字之前)(b) GT class order/text/pseudo 完整性檢查(Context 錯位教訓)
+   (c) converged base 訓練——多小時,先報 config+ETA 等使用者 go(d) 固定 battery:
+   base/flip/SFP gen/entgate/DTLR-only + diagnostics + runtime
+
+紀律:formal 只 no-TTA+flip;不再 rescue SFP;LGAK 勿動;multi-scale 永遠 exploratory;
+每實驗新 SAVE_DIR、勿覆蓋 official ckpt;數字 4 位小數 verbatim 記入
+JOURNAL_EXPERIMENT_INDEX.md + method_results.csv;
+ML python = C:\Users\NUTC2507\miniconda3\envs\reclip5090\python.exe。
 ```

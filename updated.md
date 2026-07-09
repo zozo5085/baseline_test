@@ -2,6 +2,25 @@
 
 > 使用者慣例:每次重大改版在此記錄「改了什麼、為什麼、結果」。最新在上。
 
+## 2026-07-09(深夜)— 期刊小收尾全清 + bootstrap 顯著性 + ADE 前置(等 go)
+
+- **改了什麼**:(1) push mine 補齊(11 commits);(2) flagged-fraction 抽數
+  (`tools/sfp_stats_extract.py`,新表 `tab:flagged_fraction`:VOC unrel 0.3465/0.3168 vs
+  Context 0.7254/0.6818,rewrite 0.2605/0.5444 → confound 小、rewrite 侵蝕主導);
+  (3) VOC+SFP diagnostic 列(0.1513/0.7444/0.8055,同 Context 侵蝕特徵);(4) tex 兩處
+  \TODO 全解:DFF2d 改引 fusion v2 0.6897;PAMR 發現數字早在 research_notes(full-val,
+  save_dirs 完整),`tools/recompute_miou.py` 精確重現 0.8361/0.8128 後寫入 tex+csv+index;
+  (5) paired bootstrap 顯著性工具 `tools/bootstrap_significance.py`(VOC flip p=0.0052、
+  SFP p<0.0002;Context 見 `experiments/bootstrap_significance/`);(6) ADE20K:預註冊
+  protocol §8(DTLR-only H1 + 反 rescue 條款,commit 先於任何 ADE 數字)、完整性檢查
+  (class order/text/GT 全過;出貨 pseudo recall 0.235≈chance 確認錯位不可用)、
+  `text/ade_ViT16_clip_text.pth` 生成(recipe 對 VOC pth cosine 0.999999 驗證)、
+  重生腳本+configs 備妥。
+- **為什麼**:期刊 Framing A audit 收尾——把每個 claim 補上可溯源數字;ADE 是 DTLR-only
+  假說的預註冊確認場,防 Context 錯位教訓重演。
+- **結果**:main.tex 編譯 0 錯、無 \TODO;Table I–V 之外新增 flagged-fraction 表與
+  VOC SFP 診斷列;**ADE 等使用者 go**(pseudo 重生 ~1.75h → 訓練 30ep ~20h 含 sleep/~9h 除 sleep)。
+
 ## 2026-07-08(深夜)— LGAK-MVP 實作,identity + smoke 通過,待 short run
 
 - **改了什麼**:新方向 LGAK(language-guided adaptive kernel,frozen CLIP dense feature 的
