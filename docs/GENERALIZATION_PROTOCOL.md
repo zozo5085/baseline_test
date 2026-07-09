@@ -133,7 +133,75 @@ Report, per dataset, `delta = method − baseline` under the identical fixed pro
   incompatible with this repo's vanilla model. Formal cross-dataset claims on these
   require in-repo rectification training first.
 
+## 6b. Ledger update (2026-07-09) — second confound removed, downgrade final
+
+The under-trained-base confound was removed: Context base retrained to convergence
+(`experiments/context_vanilla_converged/`, EPOCH 30, best ep17; recipe unchanged, only
+epochs). Formal full-val (PD 0.85): baseline no-TTA **0.2412**, flip **0.2473 (+0.0061)**,
+agnostic SFP gen **0.2353 (−0.0059)**, entropy-gate **0.2367 (−0.0045)**. Both confounds
+now removed and SFP/DTLR is still (slightly more) negative → the §6 downgrade is **final**:
+VOC-effective, not generalizable. Component ablation (Table IV) localizes the harm to the
+CP-SFP neighbourhood rewrite; selection+DTLR-only scored **+0.0010** on Context — a
+**post-hoc observation** that motivates §8 below but is not claimable without it.
+
 ## 7. One-line rule
 
 If a number depended on VOC val to pick a knob, it is exploratory. Everything formal must
 survive being frozen and shipped unchanged to a dataset it never saw.
+
+## 8. PRE-REGISTERED: ADE20K DTLR-only confirmation (written 2026-07-09, BEFORE any ADE number exists)
+
+No ADE20K evaluation of any kind has been run in this repo at the time of writing; this
+section's git commit timestamp is the pre-registration evidence. Nothing below may be
+changed after the first ADE number is produced.
+
+### 8.1 Hypothesis
+
+**H1 (primary).** On a converged in-repo ADE20K base, *selection + DTLR only*
+(gen profile with `CPSFP_UPDATE = False`, i.e. `--sfp_disable cpsfp`) yields a
+non-negative formal no-TTA mIoU delta vs. the same base.
+Motivation (post-hoc, Table IV): the CP-SFP rewrite is the localized failure source
+(all rewrite-containing configs negative on Context), while DTLR-only is positive on
+VOC (+0.0042) and marginally positive on Context (+0.0010).
+
+**H2 (secondary).** Flip-TTA yields a positive delta on ADE20K (would make it 3/3
+datasets for the sole clean dataset-agnostic operator).
+
+### 8.2 Frozen protocol (no ADE tuning of anything)
+
+- Base: this repo's `tools/train.py`, recipe identical to the Context converged run
+  (no method/LR changes; EPOCH 30; best epoch by the same per-epoch val criterion).
+  New SAVE_DIR `experiments/ade_vanilla_converged/`.
+- Gen profile exactly as §2: `TOP_FRACTION 0.75, DTLR_SIGMA_S_REL 2.3, DTLR_BETA 1.0,
+  PROXY_LAMBDA 1.0, DTLR_STRUCTURE_CLASSES []`; entropy-gate taus frozen at 0.0745/0.1154.
+- `TEST.PD = 0.85` (the frozen non-VOC default, as used for Context). Sole pre-declared
+  fallback: if the **baseline** at PD 0.85 operationally collapses (mIoU < 0.01, the
+  Context-PD1.0 failure mode), PD is set to 0.0 (prune disabled) **for all arms equally**;
+  this decision is made from the baseline number alone, before any method number is run.
+  No other PD value may be used. The endpoint is a *delta*, computed within one PD setting.
+- Battery (fixed, formal): base no-TTA / base flip / SFP gen / SFP entgate / DTLR-only
+  (each also +flip) + diagnostics (`tools/diag_metrics.py`) + runtime + flagged-fraction
+  stats (`tools/sfp_stats_extract.py`). Every eval a new SAVE_DIR.
+- Data-integrity gate BEFORE training (the Context lesson): GT class order vs. text
+  embedding order vs. pseudo labels verified (top1-in-GT rate sanity); failure blocks
+  training until fixed and documented.
+
+### 8.3 Pre-registered endpoints
+
+- **H1 CONFIRMED** iff: ADE DTLR-only no-TTA delta > 0 AND paired per-image bootstrap
+  (`tools/bootstrap_significance.py`, 10k resamples, seed 0) one-sided p < 0.05.
+  Consequence: "selection + DTLR is a mild dataset-agnostic positive" may be promoted to
+  a formal cross-dataset claim (VOC + Context + ADE, with Context's +0.0010 explicitly
+  labeled as not individually significant if that is what the bootstrap says).
+- **H1 INCONCLUSIVE** iff delta > 0 but p ≥ 0.05: reported as an observation only; no
+  formal claim; no further confirmation datasets are added to chase significance.
+- **H1 REFUTED** iff delta ≤ 0: DTLR-only line is closed. Recorded as a formal negative.
+  No component-level rescue attempts beyond this point.
+- **H2**: sign test only (delta > 0 strengthens the flip claim to 3/3; delta ≤ 0 is an
+  honest negative that bounds the flip claim to "2 of 3").
+- **Anti-rescue clause**: whatever full SFP gen / entgate score on ADE, the §6/§6b
+  downgrade is NOT reversed — a positive ADE delta cannot outweigh the demonstrated
+  Context failure for a method claimed as dataset-agnostic. Their ADE numbers are audit
+  datapoints only.
+- All numbers verbatim 4 decimals into `JOURNAL_EXPERIMENT_INDEX.md` + `method_results.csv`
+  regardless of outcome.
