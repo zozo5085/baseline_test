@@ -1,0 +1,11 @@
+===== LGAK IDENTITY (full val) START =====
+Wed, Jul  8, 2026  9:17:33 PM
+### A baseline model.model (config sanity, expect 0.8536) ###
+avg:0.8536
+the mIOU:0.8536
+### B lgak model.model_lgak alpha=0 (identity, must == baseline) ###
+[Load] missing keys: 7  unexpected keys: 0
+avg:0.8536
+the mIOU:0.8536
+===== LGAK IDENTITY DONE =====
+Wed, Jul  8, 2026  9:20:03 PM

@@ -1,0 +1,25 @@
+[TTA] scales=[1.0] flip=True views/img=2 images=1449 base_short=336
+test progress: 100/1449
+test progress: 200/1449
+test progress: 300/1449
+test progress: 400/1449
+test progress: 500/1449
+test progress: 600/1449
+test progress: 700/1449
+test progress: 800/1449
+test progress: 900/1449
+test progress: 1000/1449
+test progress: 1100/1449
+test progress: 1200/1449
+test progress: 1300/1449
+test progress: 1400/1449
+test progress: 1449/1449
+[0.96551731 0.6801186  0.95695598 0.94711379 0.85289503 0.9538536
+ 0.90893949 0.95281733 0.34461735 0.95826516 0.69518817 0.93850242
+ 0.91672999 0.84776733 0.83615626 0.90656163 0.94989306 0.76185026
+ 0.9817496  0.84735498 0.        ]
+avg:0.8601
+
+
+finish with 1449/1449
+the mIOU:0.8601

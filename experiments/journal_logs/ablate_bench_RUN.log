@@ -1,0 +1,40 @@
+===== TABLE IV ABLATION START =====
+Thu, Jul  9, 2026  4:09:21 PM
+### V1 VOC gen -DTLR (CP-SFP only) ###
+[Load] missing keys: 0  unexpected keys: 0
+avg:0.8563
+the mIOU:0.8563
+### V2 VOC gen -proxy (CP-SFP w/o proxy + DTLR) ###
+[Load] missing keys: 0  unexpected keys: 0
+avg:0.8581
+the mIOU:0.8581
+### V3 VOC gen -CPSFP (selection + DTLR only) ###
+[Load] missing keys: 0  unexpected keys: 0
+avg:0.8578
+the mIOU:0.8578
+### C1 Context gen -DTLR ###
+[Load] missing keys: 0  unexpected keys: 0
+avg:0.2345
+the mIOU:0.2345
+### C2 Context gen -proxy ###
+[Load] missing keys: 0  unexpected keys: 0
+avg:0.2366
+the mIOU:0.2366
+### C3 Context gen -CPSFP ###
+[Load] missing keys: 0  unexpected keys: 0
+avg:0.2422
+the mIOU:0.2422
+===== TABLE V RUNTIME BENCH =====
+Thu, Jul  9, 2026  4:25:21 PM
+[VOC base] ms/img=14.7  FPS=67.98  peakVRAM=712MiB  total_params=150.7M  n=50
+[VOC base+flip] ms/img=29.1  FPS=34.39  peakVRAM=715MiB  total_params=150.7M  n=50
+[VOC SFP gen] ms/img=20.2  FPS=49.57  peakVRAM=714MiB  total_params=150.7M  n=50
+[VOC SFP gen+flip] ms/img=39.9  FPS=25.06  peakVRAM=719MiB  total_params=150.7M  n=50
+[VOC entgate] ms/img=20.3  FPS=49.28  peakVRAM=714MiB  total_params=150.7M  n=50
+[Ctx base] ms/img=24.3  FPS=41.20  peakVRAM=923MiB  total_params=151.3M  n=50
+[Ctx base+flip] ms/img=47.8  FPS=20.91  peakVRAM=928MiB  total_params=151.3M  n=50
+[Ctx SFP gen] ms/img=30.5  FPS=32.82  peakVRAM=927MiB  total_params=151.3M  n=50
+[Ctx SFP gen+flip] ms/img=60.6  FPS=16.50  peakVRAM=939MiB  total_params=151.3M  n=50
+[Ctx entgate] ms/img=30.9  FPS=32.33  peakVRAM=927MiB  total_params=151.3M  n=50
+===== ABLATION + BENCH DONE =====
+Thu, Jul  9, 2026  4:26:35 PM

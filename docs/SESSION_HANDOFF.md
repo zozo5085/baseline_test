@@ -33,6 +33,8 @@
 
 **Table IV+V 已完成(2026-07-09,使用者授權)**:code 加 3 個 component 開關(`PROXY_ENABLE`/`DTLR_ENABLE`/`CPSFP_UPDATE`,預設 True;回歸 gate:gen 20-img 前後皆 0.5611 精確)+ `test_tta.py --sfp_disable` + `tools/bench_runtime.py`。**Ablation(formal no-TTA)**:VOC −DTLR 0.8563 / −proxy 0.8581 / −CPSFP 0.8578(vs full 0.8582 → 增益 DTLR 主導,proxy≈+0.0001);Context −DTLR 0.2345 / −proxy 0.2366 / **−CPSFP 0.2422(+0.0010 vs base 0.2412)** → **Context 失敗定位於 CP-SFP 鄰域 rewrite**(含 rewrite 全負;DTLR-only ≈ baseline)。⚠ DTLR-only 正值 = **post-hoc 觀察,依 protocol 不得升格 formal 泛化主張**(需 ADE 預註冊確認)—— 非 rescue。**Runtime(5090,batch1,50-img)**:VOC base 14.7ms/68FPS、flip 29.1、SFP 20.2、entgate 20.3、SFP+flip 39.9;Context 24.3/47.8/30.5/30.9/60.6;flip≈2×、SFP+26-37%、entgate<2%、VRAM Δ≤16MiB、全 test-time 0 params。已更新:`4_experiments.tex`(新 §Component Ablation + §Runtime and Cost + Planned Tables 改狀態)、`JOURNAL_STATUS.md`(IV/V DONE,缺口剩 flagged-fraction / PAMR / ADE / Q1-Q3 圖)、`method_results.csv`(6 列 [ABLATION formal])。**下一步(等使用者)**:小收尾 = flagged-fraction 抽數 + PAMR(補跑或軟化);之後唯一大項 = ADE(optional breadth + DTLR-only 預註冊確認場)。
 
+**可驗證實驗索引已建(2026-07-09)**:`docs/JOURNAL_EXPERIMENT_INDEX.md` — 每筆結果 10 欄位溯源(dataset/method/value/class/config/log/save_dir/commit/main-table?/原因)。session tmp logs 已永久保存到 `experiments/journal_logs/`(ablate_bench / diag / conv_eval / entgate / lgak_identity / voc_flip_regen / context8ep_sfp)。`4_experiments.tex` 全數字溯源檢查完:全部對上 csv/log,僅 2 處 `\TODO{NEEDS VERIFICATION}`(①PAMR 句無紀錄數字;②DFF2d 0.4151 在 csv 標記作廢 parity bug)+ 修正一處衍生量(entropy gate 回收 ≈1/4 非 1/3)。
+
 ---
 
 ## ⚠️ 2026-07-08 狀態更正(voc_presence / MethodA 舊塊,已被上方新塊取代大部分;MethodA 細節仍有效)

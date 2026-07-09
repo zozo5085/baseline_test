@@ -1,0 +1,26 @@
+===== DIAGNOSTICS START =====
+Thu, Jul  9, 2026  3:23:27 PM
+--- CONTEXT (converged base, C=59, stride 5) ---
+[Context base no-TTA] N=1021 miss_gt=0
+  boundary_band_error = 0.6925  (band_r=3)
+  small_object_acc    = 0.1510  (T<1024px)
+  fp_class_count_img  = 4.5406
+[Context base flip] N=1021 miss_gt=0
+  boundary_band_error = 0.6834  (band_r=3)
+  small_object_acc    = 0.1528  (T<1024px)
+  fp_class_count_img  = 4.0480
+[Context SFP/DTLR no-TTA] N=1021 miss_gt=0
+  boundary_band_error = 0.6897  (band_r=3)
+  small_object_acc    = 0.1431  (T<1024px)
+  fp_class_count_img  = 3.9902
+--- VOC (C=20, stride 2) ---
+[VOC base no-TTA] N=725 miss_gt=0
+  boundary_band_error = 0.1522  (band_r=3)
+  small_object_acc    = 0.7502  (T<1024px)
+  fp_class_count_img  = 0.8055
+[VOC base flip] N=725 miss_gt=0
+  boundary_band_error = 0.1496  (band_r=3)
+  small_object_acc    = 0.7386  (T<1024px)
+  fp_class_count_img  = 0.8110
+===== DIAGNOSTICS DONE =====
+Thu, Jul  9, 2026  3:26:31 PM

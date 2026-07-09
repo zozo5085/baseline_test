@@ -1,0 +1,16 @@
+===== ENTGATE DE-CONFOUND EVAL START =====
+Wed, Jul  8, 2026  7:56:09 PM
+### A VOC gated SFP no-TTA  [req4]  (compare vs non-gated 0.8582) ###
+[Load] missing keys: 0  unexpected keys: 0
+avg:0.8579
+the mIOU:0.8579
+### B Context gated SFP no-TTA  [req3c]  (compare vs non-gated 0.1929 / base 0.1980) ###
+[Load] missing keys: 0  unexpected keys: 0
+avg:0.1945
+the mIOU:0.1945
+### C Context gated SFP flip  [req3d]  (compare vs non-gated 0.1955 / base flip 0.2028) ###
+[Load] missing keys: 0  unexpected keys: 0
+avg:0.1973
+the mIOU:0.1973
+===== ENTGATE DE-CONFOUND EVAL DONE =====
+Wed, Jul  8, 2026  8:23:27 PM

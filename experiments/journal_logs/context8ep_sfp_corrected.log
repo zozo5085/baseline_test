@@ -1,0 +1,9 @@
+### 3c agnostic SFP+DTLR no-TTA @ PD0.85 [FORMAL corrected] ###
+[Load] missing keys: 0  unexpected keys: 0
+avg:0.1929
+the mIOU:0.1929
+### 4c agnostic SFP+DTLR flip @ PD0.85 [FORMAL corrected] ###
+[Load] missing keys: 0  unexpected keys: 0
+avg:0.1955
+the mIOU:0.1955
+### CORRECTED SFP EVAL DONE ###

@@ -1,0 +1,23 @@
+===== CONVERGED CONTEXT 4-STEP + ENTGATE START =====
+Thu, Jul  9, 2026  5:10:23 AM
+weight: 604019275 experiments/context_vanilla_converged/best_weight.pth
+### 1 baseline no-TTA (model.model, PD0.85) ###
+avg:0.2412
+the mIOU:0.2412
+### 2 baseline flip-TTA ###
+avg:0.2473
+the mIOU:0.2473
+### 3 agnostic SFP+DTLR gen no-TTA (model.model_sfp_dtlr) ###
+avg:0.2353
+the mIOU:0.2353
+### 4 agnostic SFP+DTLR gen flip ###
+avg:0.2383
+the mIOU:0.2383
+### 5 entropy-gate SFP+DTLR no-TTA (de-VOC'd) ###
+avg:0.2367
+the mIOU:0.2367
+### 6 entropy-gate SFP+DTLR flip ###
+avg:0.2400
+the mIOU:0.2400
+===== CONVERGED CONTEXT EVAL DONE =====
+Thu, Jul  9, 2026  5:40:19 AM
