@@ -1,0 +1,44 @@
+train images: 20210  window=85 step=42 K=6
+500/20210  4.69 img/s  ETA 70.0 min  recall 0.696  precision 0.259
+1000/20210  4.73 img/s  ETA 67.7 min  recall 0.675  precision 0.280
+1500/20210  5.13 img/s  ETA 60.8 min  recall 0.646  precision 0.247
+2000/20210  5.44 img/s  ETA 55.8 min  recall 0.632  precision 0.238
+2500/20210  5.75 img/s  ETA 51.4 min  recall 0.612  precision 0.232
+3000/20210  5.84 img/s  ETA 49.2 min  recall 0.617  precision 0.240
+3500/20210  6.04 img/s  ETA 46.1 min  recall 0.609  precision 0.250
+4000/20210  6.08 img/s  ETA 44.4 min  recall 0.605  precision 0.254
+4500/20210  6.21 img/s  ETA 42.1 min  recall 0.597  precision 0.253
+5000/20210  6.44 img/s  ETA 39.4 min  recall 0.589  precision 0.253
+5500/20210  6.52 img/s  ETA 37.6 min  recall 0.584  precision 0.248
+6000/20210  6.64 img/s  ETA 35.6 min  recall 0.578  precision 0.251
+6500/20210  6.69 img/s  ETA 34.1 min  recall 0.578  precision 0.251
+7000/20210  6.69 img/s  ETA 32.9 min  recall 0.575  precision 0.250
+7500/20210  6.62 img/s  ETA 32.0 min  recall 0.576  precision 0.250
+8000/20210  6.68 img/s  ETA 30.5 min  recall 0.576  precision 0.250
+8500/20210  6.78 img/s  ETA 28.8 min  recall 0.577  precision 0.251
+9000/20210  6.79 img/s  ETA 27.5 min  recall 0.575  precision 0.249
+9500/20210  6.88 img/s  ETA 26.0 min  recall 0.574  precision 0.255
+10000/20210  6.90 img/s  ETA 24.7 min  recall 0.573  precision 0.254
+10500/20210  6.85 img/s  ETA 23.6 min  recall 0.572  precision 0.255
+11000/20210  6.87 img/s  ETA 22.3 min  recall 0.571  precision 0.255
+11500/20210  6.80 img/s  ETA 21.3 min  recall 0.572  precision 0.257
+12000/20210  6.83 img/s  ETA 20.0 min  recall 0.572  precision 0.257
+12500/20210  6.83 img/s  ETA 18.8 min  recall 0.574  precision 0.259
+13000/20210  6.72 img/s  ETA 17.9 min  recall 0.578  precision 0.258
+13500/20210  6.80 img/s  ETA 16.4 min  recall 0.576  precision 0.258
+14000/20210  6.87 img/s  ETA 15.1 min  recall 0.574  precision 0.258
+14500/20210  6.90 img/s  ETA 13.8 min  recall 0.573  precision 0.257
+15000/20210  6.94 img/s  ETA 12.5 min  recall 0.573  precision 0.257
+15500/20210  6.92 img/s  ETA 11.3 min  recall 0.574  precision 0.257
+16000/20210  6.94 img/s  ETA 10.1 min  recall 0.573  precision 0.258
+16500/20210  7.00 img/s  ETA 8.8 min  recall 0.572  precision 0.258
+17000/20210  7.03 img/s  ETA 7.6 min  recall 0.572  precision 0.260
+17500/20210  6.93 img/s  ETA 6.5 min  recall 0.577  precision 0.261
+18000/20210  6.83 img/s  ETA 5.4 min  recall 0.581  precision 0.261
+18500/20210  6.75 img/s  ETA 4.2 min  recall 0.585  precision 0.262
+19000/20210  6.80 img/s  ETA 3.0 min  recall 0.585  precision 0.265
+19500/20210  6.83 img/s  ETA 1.7 min  recall 0.584  precision 0.264
+20000/20210  6.86 img/s  ETA 0.5 min  recall 0.584  precision 0.264
+20210/20210  6.86 img/s  ETA 0.0 min  recall 0.583  precision 0.263
+DONE. mean GT recall 0.583  precision 0.263  (Context fixed ref: recall 0.579)
+written: text\ade_pseudo_label.json (20210 lines)

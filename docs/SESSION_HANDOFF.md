@@ -44,7 +44,13 @@
   shape (150,512)、float32、row-normalized。recipe 驗證數字(對出貨 voc pth per-class cosine
   min 0.999999)⚠ **[NEEDS VERIFICATION]**(同上,未保存 log;含在上述重驗指令輸出 [2] 行)。
   工具 `tools/ade_integrity_check.py`。
-- **pseudo**:`text/ade_pseudo_label.json` **不存在(待重生)——已重驗(2026-07-10)**。
+- **pseudo(UPDATE 2026-07-10 晚)**:`text/ade_pseudo_label.json` **已本機重生並通過全部驗證**
+  (20210 行、idx 0..149、0 空列表/parse 失敗、全量 aligned recall 0.583 ≫ 0.235;
+  完整驗證表+生成過程無 GT 稽核 = `docs/ADE20K_PSEUDO_COMPARISON.md`;
+  log `experiments/journal_logs/ade_pseudo_regen.log`)。**training input 就緒,但 training 仍未啟動。**
+  ⛔ `D:\ReCLIPPP2026\text\ade_pseudo_label.json` = **GT-derived top-5 presence labels =
+  DATA LEAKAGE,禁用於任何 formal / unsupervised training**(使用者 2026-07-10 確認)。
+  以下為原重生前狀態記錄:`text/ade_pseudo_label.json` 不存在(待重生)——已重驗(2026-07-10)。
   出貨 `ade_pseudo_label_ReCLIPPP.json` 判定錯位不可用(recall 0.235≈chance、對影像位移±1不變
   → 行序不合本機 listdir,不可回復)⚠ **[NEEDS VERIFICATION]**(session 觀察,未保存 log;
   診斷腳本在 scratchpad 已隨 session 消失,重驗走上述 integrity 指令的 [6] 行,其 recall<0.35 即 FAIL)。
@@ -67,7 +73,10 @@
 | C | 先只跑 pseudo 重生 | ~1.75h | 完成後驗 recall 回報,訓練另行決定 |
 | D | 暫緩 ADE | 0 | 期刊現有兩資料集內容已完整(tex 無 TODO、Table I–V 就緒) |
 
-訓練啟動指令(A/B 選定後):`python tools\train.py --cfg config\ade_train_converged_cfg.yaml --model RECLIPPP`
+**UPDATE 2026-07-10 晚:pseudo 重生已完成並驗證(見上方 pseudo 條目)→ 選項只剩訓練本身的
+go/no-go(sleep 保留 ~20h / 移除 ~9h,移除需先在 protocol §8 加 amendment)。**
+
+訓練啟動指令(使用者 go 後):`python tools\train.py --cfg config\ade_train_converged_cfg.yaml --model RECLIPPP`
 (ML python = `C:\Users\NUTC2507\miniconda3\envs\reclip5090\python.exe`;訓練後固定 battery =
 base/flip/SFP gen/entgate/DTLR-only(各含 flip)+ diagnostics + runtime + flagged-fraction)。
 
