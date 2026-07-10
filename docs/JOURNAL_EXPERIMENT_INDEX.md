@@ -149,3 +149,21 @@ VOC = official ckpt + gen cfg(§1 V4 同設定);Context = converged ckpt + gen c
 
 解讀:class-count confound 真實但小(gate 換掉只回收 ~4pt/38pt),與 mIoU 「recovers ~1/4」吻合;
 Context 實際被 rewrite 的 token >54% 且 proxy 支撐少 26% → rewrite 侵蝕主導,呼應 Table IV/diagnostics。
+
+## 11. Paired bootstrap significance(diagnostic/statistical;2026-07-10)
+
+Tool `tools/bootstrap_significance.py`(per-image intersect/union 可加性 → paired image bootstrap;
+10,000 resamples,seed 0;base/variant 用同一 resample indices)。Sanity:observed mIoU 全部逐字重現
+(VOC 0.8536/0.8601/0.8582;Context 0.2412/0.2473/0.2353)。輸入 preds = §1 V1/V2/V4 與 §2 C1/C2/C3
+的 save_dirs。JSON `experiments/bootstrap_significance/{voc,context}.json`;log
+`journal_logs/bootstrap_{voc,context}.log`。
+
+| dataset | comparison | delta | 95% CI | p(two-sided) |
+|---|---|---|---|---|
+| VOC | flip − base | +0.0065 | [+0.0022, +0.0111] | 0.0052 |
+| VOC | SFP gen − base | +0.0046 | [+0.0025, +0.0069] | <0.0002 |
+| Context conv. | flip − base | +0.0061 | [+0.0055, +0.0067] | <0.0002 |
+| Context conv. | SFP gen − base | −0.0059 | [−0.0073, −0.0045] | <0.0002 |
+
+四個 headline delta 全部顯著:flip 兩資料集顯著為正;SFP gen VOC 顯著為正、Context 顯著為負
+(= audit 結論的統計背書)。尚未寫進 tex(建議一句 significance 註記,見 handoff 下一步)。

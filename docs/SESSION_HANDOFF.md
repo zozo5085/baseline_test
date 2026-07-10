@@ -5,6 +5,106 @@
 
 ---
 
+## 🔵 2026-07-10 Checkpoint(最新;下次 session 先讀本塊 + 下方 🟢 統整交接)
+
+> **硬性標註(不可違反)**:①**ADE20K 尚未正式開始長時間 training**(僅前置完成,等使用者 go);
+> ②**目前不應啟動 LGAK**;③**不應做 VOC-only tuning**;④**不應修改 batch size、learning rate、
+> augmentation 或 class order**(ADE 一切參數已由 protocol §8 預註冊凍結);⑤**下次 session 必須
+> 先讀取本檔(SESSION_HANDOFF.md)再繼續**。
+
+### 1. 已完成的工作(2026-07-09 深夜 ~ 07-10 凌晨 session)
+- push `mine` 補齊(`5ebb07b`…`629afc7` 11 個 + 本 session 4 個;**絕不 push origin**)。
+- flagged-fraction 表(tex `tab:flagged_fraction` + index §10)。
+- VOC+SFP diagnostic 列(tex `tab:diagnostics` + index §5)。
+- tex 兩處 `\TODO` 全解:DFF2d 改引 fusion v2 0.6897;PAMR 免重跑(數字已存在,recompute 驗證)。
+- paired bootstrap 顯著性:VOC + Context 四個 headline delta 全顯著(index §11)。
+- ADE20K 前置:預註冊(protocol §8)→ 完整性檢查 → text 生成 → pseudo 重生腳本 + configs。
+- main.tex 編譯 0 錯(6 頁),無任何 `\TODO`。
+
+### 2. 目前仍在執行的 background task / PID
+- **無**。所有 background 工作已完成(VOC/Context bootstrap、stats 抽數、diag)。
+  python process 數 = 0;無 GPU 訓練。輸出已保全至 `experiments/journal_logs/`
+  (`bootstrap_voc.log`、`bootstrap_context.log`、`sfp_stats_{voc,context}.log`、`diag_voc_sfp.log`)。
+
+### 3. ADE20K 目前狀態
+- **dataset**:`D:/ReCLIPv3/datasets/ADEChallengeData2016/`(train 20210、val 2000、`objectInfo150.txt`)。
+- **class mapping**:repo `ade_classes`(utils/preprocess.py)== objectInfo150 官方順序,0/150 錯位;
+  GT png 值域 0..150(0=ignore,REDUCE_ZERO_LABEL);CLIP top1-in-GT 0.527(≈8×random,對齊正常)。
+- **text**:`text/ade_ViT16_clip_text.pth` 已生成([150,512],GT 順序;recipe 對出貨 voc pth
+  per-class cosine min 0.999999 驗證後才生成)。工具 `tools/ade_integrity_check.py`。
+- **pseudo**:`text/ade_pseudo_label.json` **不存在(待重生)**。出貨 `ade_pseudo_label_ReCLIPPP.json`
+  **確認錯位不可用**(recall 0.235≈chance、對影像位移±1不變 → 行序不合本機 listdir,不可回復)。
+  重生腳本 `tools/ade_pseudo_regen.py`(批次滑窗,同 pseudo_class.py ReCLIPPP recipe;30-img smoke:
+  3.2 img/s、recall 0.715 vs Context 修復後參考 0.579;全量 ETA ~1.75h)。
+- **config**:`config/ade_train_converged_cfg.yaml`(EPOCH 30、LR 0.01、CROP 512、SCALE [2048,512],
+  Context 同 recipe)+ `config/ade_test_local_cfg.yaml`(PD 0.85,依預註冊)。
+- **checkpoint**:無(`experiments/ade_vanilla_converged/` 未建立、未訓練)。
+- **SAVE_DIR 規劃**:train `experiments/ade_vanilla_converged/`;eval `experiments/ade_conv_eval/<arm>/`。
+- **預註冊**:`GENERALIZATION_PROTOCOL.md §8`(commit `b1c5695`,先於任何 ADE 數字)——H1 DTLR-only
+  delta>0 且 bootstrap p<0.05;H2 flip 正 delta(sign);PD 0.85 唯一 fallback = baseline 崩(<0.01)才
+  改 PD 0.0;**反 rescue 條款**:SFP gen/entgate 的 ADE 結果不可翻轉降級判決。
+
+### 4. ADE20K 尚未做出的選擇(等使用者,勿自行啟動)
+| 選項 | 內容 | 成本 | 差異 |
+|---|---|---|---|
+| A | pseudo 重生 + 訓練(**移除** train.py 0.08s/img sleep) | ~1.75h + ~9h | sleep 只影響 wall-time 不影響學習;需先在 protocol §8 加註 amendment(數字出現前仍合法)再跑 |
+| B | pseudo 重生 + 訓練(**保留** sleep,完全照原 recipe) | ~1.75h + ~20h | 與 Context converged run 的 wall-clock 行為完全一致 |
+| C | 先只跑 pseudo 重生 | ~1.75h | 完成後驗 recall 回報,訓練另行決定 |
+| D | 暫緩 ADE | 0 | 期刊現有兩資料集內容已完整(tex 無 TODO、Table I–V 就緒) |
+
+訓練啟動指令(A/B 選定後):`python tools\train.py --cfg config\ade_train_converged_cfg.yaml --model RECLIPPP`
+(ML python = `C:\Users\NUTC2507\miniconda3\envs\reclip5090\python.exe`;訓練後固定 battery =
+base/flip/SFP gen/entgate/DTLR-only(各含 flip)+ diagnostics + runtime + flagged-fraction)。
+
+### 5. VOC / Context 已完成結果(逐字;完整溯源見 index)
+- **formal**(🟢 §2 全部有效):VOC base 0.8536 / flip 0.8601 / SFP legacy 0.8590 / gen 0.8582 /
+  entgate 0.8579 / gen+flip 0.8639 / MethodA 0.8565;Context conv. base 0.2412 / flip 0.2473 /
+  SFP gen 0.2353 / gen+flip 0.2383 / entgate 0.2367 / entgate+flip 0.2400;
+  Ablation:VOC −DTLR 0.8563 / −proxy 0.8581 / −CPSFP 0.8578;Context 0.2345 / 0.2366 / 0.2422。
+- **formal negative(新記錄)**:PAMR full-res 10it 0.8361(token 1/3/10it 0.8128/0.7250/0.5843,
+  identity 0.8536 精確;recompute 驗證);fusion v2 0.6897(vs 自訓 0.8451)。
+- **diagnostic**:diag 表(Context base/flip/SFP + VOC base/flip/SFP,含新 VOC SFP 列
+  0.1513/0.7444/0.8055);flagged-fraction(VOC unrel 0.3465/0.3168、Context 0.7254/0.6818、
+  rewrite 0.2605/0.5444、proxy avail 0.9932/0.7433);runtime Table V。
+- **exploratory(附錄限定)**:ms 0.8661/0.8643/0.8637/0.8599。**8-ep Context 全部 superseded**。
+
+### 6. Bootstrap significance 進度:**完成**
+`tools/bootstrap_significance.py`(10k resamples,seed 0,paired;observed 全部逐字重現)。
+VOC flip **+0.0065** CI[+0.0022,+0.0111] p=0.0052;VOC SFP gen **+0.0046** CI[+0.0025,+0.0069]
+p<0.0002;Context flip **+0.0061** CI[+0.0055,+0.0067] p<0.0002;Context SFP gen **−0.0059**
+CI[−0.0073,−0.0045] p<0.0002。四個 headline delta 全顯著;audit 結論獲統計背書。
+JSON `experiments/bootstrap_significance/`;index §11。**尚未寫進 tex(見下一步②)。**
+
+### 7. Journal 已完成的表 / 圖 / 文件
+- Desktop `02_2026_JournalPaper/sections/4_experiments.tex`:Table I(2/5 資料集)、II(2/5)、
+  III(VOC 完整;Context legacy n/a by design)、IV(component ablation,DONE)、V(runtime,DONE)、
+  `tab:diagnostics`(本次 +VOC SFP 列)、`tab:flagged_fraction`(本次新增)、`fig_flip_diag.png`、
+  Negative Findings(PAMR/fusion 數字本次補齊)。main.tex 編譯 exit 0(6 頁)、無 `\TODO`。
+- `JOURNAL_STATUS.md`:missing-data #1 #2 已標 DONE;剩 ADE(#3)與 Q1-Q3 圖(#4)。
+
+### 8. 尚未完成的工作
+1. ADE20K 全流程(等使用者選 §4 選項)。
+2. bootstrap 顯著性寫進 tex(一句 + 或表註;數字在 index §11)。
+3. Q1-Q3 質性圖(可選;Q4 已有)。
+4. Cityscapes / COCO-Stuff(optional breadth,protocol §4;非必要)。
+
+### 9. 建議下一步順序
+① 使用者決定 ADE 選項(§4);② tex 加 bootstrap significance 句(30 min,無 GPU);
+③ 若 go:pseudo 重生 → recall 驗證(門檻:顯著高於 chance,參考 smoke 0.715)→ 訓練 →
+固定 battery → H1/H2 依 §8 判定;④ Q1-Q3 圖(可選)。
+
+### 10. Provenance(本 session 新增結果的溯源鏈)
+- 全部結果:config/log/save_dir/commit 十欄位溯源 = `docs/JOURNAL_EXPERIMENT_INDEX.md`
+  (本次新增 §10 flagged-fraction、§11 bootstrap;§5 VOC SFP 列;§8 PAMR/fusion 更新)。
+- mIoU 帳本 = `docs/method_results.csv`(本次 +5 PAMR 列)。
+- 本 session commits:`13337b7`(close-outs:stats/diag/PAMR/csv/index)→ `b1c5695`
+  (**ADE 預註冊**,先於一切 ADE 數字)→ `890007b`(ADE integrity + text pth + regen 腳本 + configs)
+  → `504d248`(docs)→ 本 checkpoint commit。已 push `mine`(= zozo5085/baseline_test)。
+- 保全 log:`experiments/journal_logs/`(+4 個:bootstrap_voc / bootstrap_context /
+  sfp_stats_voc / sfp_stats_context;另 diag_voc_sfp)。
+
+---
+
 ## 🟢 統整交接 — 2026-07-09(**只讀這塊即可開工;下方全部是歷史細節**)
 
 **TL;DR**:期刊 = **Framing A 泛化 audit,已鎖定**。SFP/DTLR 經雙重 de-confound(entropy gate + converged base)後在 Context 仍負 → **正式降級 = VOC-effective / not-generalizable,勿再 rescue**。**flip-TTA 是唯一乾淨 dataset-agnostic 正結果**(VOC +0.0065 / Context +0.0061)。期刊 Table IV/V 已完成,I/II 有 2/5 資料集。LGAK 封存為下一篇方向。**10 個 commit 未 push**(`5ebb07b`…`a858563`)。

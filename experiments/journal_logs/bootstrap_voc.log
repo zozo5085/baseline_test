@@ -1,0 +1,17 @@
+images=1449 num_classes=20(+1 bins) reduce_zero_label=True
+[base] D:\ReCLIPP_Test\experiments\lgak_id_baseline
+  lgak_id_baseline: 500/1449
+  lgak_id_baseline: 1000/1449
+  lgak_id_baseline: 1449/1449
+[base] observed mIoU = 0.8536
+[variant:flip] D:\ReCLIPP_Test\experiments\voc_diag_flip
+  voc_diag_flip: 500/1449
+  voc_diag_flip: 1000/1449
+  voc_diag_flip: 1449/1449
+  mIoU=0.8601 delta=+0.0065 95%CI=[+0.0022, +0.0111] p(two-sided)=0.0052
+[variant:sfp_gen] D:\ReCLIPP_Test\experiments\voc_sfp_dtlr_gen_official_eval
+  voc_sfp_dtlr_gen_official_eval: 500/1449
+  voc_sfp_dtlr_gen_official_eval: 1000/1449
+  voc_sfp_dtlr_gen_official_eval: 1449/1449
+  mIoU=0.8582 delta=+0.0046 95%CI=[+0.0025, +0.0069] p(two-sided)=<0.0002
+written: D:\ReCLIPP_Test\experiments\bootstrap_significance\voc.json

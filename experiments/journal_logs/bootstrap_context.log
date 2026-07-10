@@ -1,0 +1,41 @@
+images=5105 num_classes=59(+1 bins) reduce_zero_label=True
+[base] D:\ReCLIPP_Test\experiments\context_conv_eval\base_notta
+  base_notta: 500/5105
+  base_notta: 1000/5105
+  base_notta: 1500/5105
+  base_notta: 2000/5105
+  base_notta: 2500/5105
+  base_notta: 3000/5105
+  base_notta: 3500/5105
+  base_notta: 4000/5105
+  base_notta: 4500/5105
+  base_notta: 5000/5105
+  base_notta: 5105/5105
+[base] observed mIoU = 0.2412
+[variant:flip] D:\ReCLIPP_Test\experiments\context_conv_eval\base_flip
+  base_flip: 500/5105
+  base_flip: 1000/5105
+  base_flip: 1500/5105
+  base_flip: 2000/5105
+  base_flip: 2500/5105
+  base_flip: 3000/5105
+  base_flip: 3500/5105
+  base_flip: 4000/5105
+  base_flip: 4500/5105
+  base_flip: 5000/5105
+  base_flip: 5105/5105
+  mIoU=0.2473 delta=+0.0061 95%CI=[+0.0055, +0.0067] p(two-sided)=<0.0002
+[variant:sfp_gen] D:\ReCLIPP_Test\experiments\context_conv_eval\sfp_notta
+  sfp_notta: 500/5105
+  sfp_notta: 1000/5105
+  sfp_notta: 1500/5105
+  sfp_notta: 2000/5105
+  sfp_notta: 2500/5105
+  sfp_notta: 3000/5105
+  sfp_notta: 3500/5105
+  sfp_notta: 4000/5105
+  sfp_notta: 4500/5105
+  sfp_notta: 5000/5105
+  sfp_notta: 5105/5105
+  mIoU=0.2353 delta=-0.0059 95%CI=[-0.0073, -0.0045] p(two-sided)=<0.0002
+written: D:\ReCLIPP_Test\experiments\bootstrap_significance\context.json

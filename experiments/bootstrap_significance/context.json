@@ -1,0 +1,34 @@
+{
+  "cfg": "D:\\ReCLIPP_Test\\config\\context_test_local_cfg.yaml",
+  "base": "D:\\ReCLIPP_Test\\experiments\\context_conv_eval\\base_notta",
+  "images": 5105,
+  "n_boot": 10000,
+  "seed": 0,
+  "base_miou": 0.24121129790714127,
+  "variants": {
+    "flip": {
+      "pred_dir": "D:\\ReCLIPP_Test\\experiments\\context_conv_eval\\base_flip",
+      "miou": 0.2473207873474482,
+      "delta": 0.0061094894403069255,
+      "ci95": [
+        0.005503755635072207,
+        0.006744938761811365
+      ],
+      "p_one_sided_le0": 0.0,
+      "p_one_sided_ge0": 1.0,
+      "p_two_sided": 0.0
+    },
+    "sfp_gen": {
+      "pred_dir": "D:\\ReCLIPP_Test\\experiments\\context_conv_eval\\sfp_notta",
+      "miou": 0.23532077028706241,
+      "delta": -0.005890527620078856,
+      "ci95": [
+        -0.007296838926879775,
+        -0.004505097867732754
+      ],
+      "p_one_sided_le0": 1.0,
+      "p_one_sided_ge0": 0.0,
+      "p_two_sided": 0.0
+    }
+  }
+}
