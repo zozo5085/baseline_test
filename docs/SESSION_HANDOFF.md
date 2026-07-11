@@ -27,8 +27,13 @@
   **≈ 20.4 h**(預計 2026-07-12 下午完成)。epoch 1 進行中(51%,avg_loss 4.86)。
   參考:Context converged epoch-0 val 亦低(0.11 量級),且 per-epoch val 系統性低於 formal
   test(VOC 校準 ~0.04)— epoch-0 絕對值勿過度解讀,看收斂曲線。
-- **監看安排(使用者 2026-07-11 指示)**:下一次定期回報 = **epoch 5 完成後**(console.log 第 6 個
-  "the mIOU:");此前僅在 PID 消失 / Traceback / loss NaN‧Inf / OOM / log 停滯 >15 min 時回報。
+- **監看安排(使用者 2026-07-11 指示)**:定期回報每 5 epochs;此外僅在 PID 消失 / Traceback /
+  loss NaN‧Inf / OOM / log 停滯 >15 min 時回報。
+- **epoch-5 檢查點(21:36 只讀核實)**:val 曲線 ep0→5 = 0.0431 / 0.0874 / 0.0861 / **0.1015**(ep3,
+  = 現任 best_weight,mtime 20:20)/ 0.0970 / 0.1015(未嚴格超越 ep3);健康上升+平台抖動,
+  絕對值符合 150 類預期(cf. Context 8ep 0.19 量級/59 類)。實測配速 6 epochs / 3h41m ≈
+  **36.9 min/epoch**(9.7 it/s)→ 更新 ETA ≈ **19.1 h 總長,約 2026-07-12 13:00 完成**。
+  epoch 6 進行中(avg_loss 4.82,GPU 93%/19.6GB)。下一定期回報 = epoch 10。
 - **訓練期間禁止其他 GPU 實驗。** 完成後:formal test(PD 0.85)→ §8.2 固定 battery
   (base/flip/SFP gen/entgate/DTLR-only 各含 flip + diagnostics + runtime + flagged-fraction)
   → §8.3 H1/H2 判定;數字 4 位小數進 index + csv。訓練產物勿覆蓋;下一 session 先查
