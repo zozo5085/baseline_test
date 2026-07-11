@@ -21,6 +21,14 @@
   (~39 min train + ~5 min val per epoch × 31 epochs;先前 ~9h 為低估的外插)。
 - 注意:一次過早啟動(PID 80168, 17:45)已依使用者指示於第二輪驗證前終止——死於初始化、
   0 輸出、SAVE_DIR 已重建;seed 0 使本 run 不受影響。
+- **進度(2026-07-11 18:52 只讀核實)**:epoch 0 完成 — val mIoU **0.0431**(`the mIOU:0.0431`,
+  `finish with 2000/2000`)、`best_weight.pth` 已建(610,582,283 bytes,18:32:26);
+  epoch 0 train 36:12 @ 9.01 it/s + val ≈3 min ≈ **39.5 min/epoch** → 31 epochs 總 wall
+  **≈ 20.4 h**(預計 2026-07-12 下午完成)。epoch 1 進行中(51%,avg_loss 4.86)。
+  參考:Context converged epoch-0 val 亦低(0.11 量級),且 per-epoch val 系統性低於 formal
+  test(VOC 校準 ~0.04)— epoch-0 絕對值勿過度解讀,看收斂曲線。
+- **監看安排(使用者 2026-07-11 指示)**:下一次定期回報 = **epoch 5 完成後**(console.log 第 6 個
+  "the mIOU:");此前僅在 PID 消失 / Traceback / loss NaN‧Inf / OOM / log 停滯 >15 min 時回報。
 - **訓練期間禁止其他 GPU 實驗。** 完成後:formal test(PD 0.85)→ §8.2 固定 battery
   (base/flip/SFP gen/entgate/DTLR-only 各含 flip + diagnostics + runtime + flagged-fraction)
   → §8.3 H1/H2 判定;數字 4 位小數進 index + csv。訓練產物勿覆蓋;下一 session 先查
