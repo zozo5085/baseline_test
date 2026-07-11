@@ -257,3 +257,35 @@ criteria are **unchanged in full** (item 8).
     - environment: conda env `reclip5090`, Python 3.10.19,
       torch 2.11.0.dev20260214+cu128, CUDA 12.8, NVIDIA GeForce RTX 5090 (32 GB),
       Windows 10; launch command recorded in `launch_info.txt`.
+
+#### 8.4 Addendum A (2026-07-11, pre-launch; appended after independent fresh-context verification flagged a commit-range ambiguity — still BEFORE any ADE training or ADE mIoU)
+
+- The pre-run snapshot commit `60c14e9` necessarily bundles, besides this amendment's own
+  changes (sleep removal + fixed seeding), the previously-UNCOMMITTED local-training
+  infrastructure refactor of `tools/train.py` that had lived in the working tree since
+  2026-07-06/07: optional `--distributed` (single-process default), `--model_module`
+  dynamic model loading, `shuffle = train_sampler is None` (native shuffle when
+  non-distributed), device handling, throttled validation prints.
+- Item 6's "untouched" claims are therefore relative to **the code that produced the
+  existing baselines** (the working tree), not to the stale last-committed upstream
+  `train.py` — which was DDP-only (`shuffle=False` + `DistributedSampler`, `mp.spawn`
+  with gloo) and did not even accept the recorded launch commands.
+- Evidence the refactor predates every comparison baseline:
+  (a) committed handoff text documents the uncommitted `tools/train.py(+86)` diff BEFORE
+      the Context converged run (`git log -S "tools/train.py(+86)" -- docs/SESSION_HANDOFF.md`);
+  (b) recorded launch commands from 2026-07-06..08 use `--model_module`
+      (e.g. `model.model_presence`, `model.model_feature_fusion`) — an argument that does
+      not exist in the pre-snapshot committed `train.py`
+      (`git show 70c24b3:tools/train.py` contains no `--model_module`), so those runs can
+      only have executed the refactored working tree;
+  (c) `experiments/context_vanilla_converged/console.log` timestamps
+      2026-07-08 21:50 → 2026-07-09 05:09 (single-process run).
+- Consequently the ADE run and the Context converged baseline share the IDENTICAL
+  sampler / single-process code path; the only code difference between the
+  Context-baseline code and the ADE launch code is exactly items 5 + 9 (sleep removal,
+  fixed seeding). No cross-arm confound is introduced. Independently, §8.1's H1/H2
+  endpoints are within-ADE deltas (every arm on the same base/ckpt/code), so they are
+  insensitive to any cross-dataset code question.
+- Completeness note (verifier claim-3 caveat): the string `ReCLIPPP2026` appears in
+  `tools/ade_pseudo_compare.py`'s docstring solely as the `--old` usage example of the
+  ban-verification tool itself; it is not a load path in any training code or config.
