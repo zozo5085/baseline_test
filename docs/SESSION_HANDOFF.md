@@ -6,7 +6,27 @@
 
 ---
 
-## 🔵 2026-07-10 Checkpoint(最新;下次 session 先讀本塊 + 下方 🟢 統整交接)
+## 🔴 2026-07-11 17:53 — ADE20K base training 執行中(最新狀態,先讀這裡)
+
+- **PID 39708**,started 2026-07-11 17:52:59,detached。指令:
+  `C:\Users\NUTC2507\miniconda3\envs\reclip5090\python.exe tools/train.py --cfg config/ade_train_converged_cfg.yaml --model RECLIPPP`(cwd = D:\ReCLIPP_Test,單卡,seed 0)。
+- log:`experiments/ade_vanilla_converged/console.log`(stdout)/ `console.err.log`(tqdm);
+  完整啟動記錄+雙輪 verifier 判定 = `experiments/ade_vanilla_converged/launch_info.txt`。
+- **final pre-run HEAD = `2a9455e`**(訓練 import chain 與 snapshot commit `60c14e9` 位元組相同)。
+  Gate 鏈:preflight 全過 → smoke PASSED(loss/grads 有限,7/7 tensors)→ verifier 第一輪 4/5
+  (claim 2 反駁 → 以 append-only §8.4 Addendum A 披露解決,`2a9455e`)→ **第二輪全新 fresh-context
+  verifier @ final HEAD:五項全 CONFIRMED**(關鍵獨立證據:Context baseline console.log 1612×
+  "validation progress"、0×"img_idx" → baseline 本來就跑重構後單卡路徑,無跨 arm confound)。
+- 啟動驗證:GPU 94% / 9.1 GB、tqdm 208/20210 @ 8.71 it/s、loss≈5.0。**實測 ETA ≈ 22 h**
+  (~39 min train + ~5 min val per epoch × 31 epochs;先前 ~9h 為低估的外插)。
+- 注意:一次過早啟動(PID 80168, 17:45)已依使用者指示於第二輪驗證前終止——死於初始化、
+  0 輸出、SAVE_DIR 已重建;seed 0 使本 run 不受影響。
+- **訓練期間禁止其他 GPU 實驗。** 完成後:formal test(PD 0.85)→ §8.2 固定 battery
+  (base/flip/SFP gen/entgate/DTLR-only 各含 flip + diagnostics + runtime + flagged-fraction)
+  → §8.3 H1/H2 判定;數字 4 位小數進 index + csv。訓練產物勿覆蓋;下一 session 先查
+  `Get-Process -Id 39708` 與 console.log 尾行。
+
+## 🔵 2026-07-10 Checkpoint(下次 session 先讀上方 🔴 + 本塊 + 下方 🟢 統整交接)
 
 > **硬性標註(不可違反)**:①**ADE20K 尚未正式開始長時間 training**(僅前置完成,等使用者 go);
 > ②**目前不應啟動 LGAK**;③**不應做 VOC-only tuning**;④**不應修改 batch size、learning rate、
