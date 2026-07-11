@@ -34,6 +34,9 @@
   絕對值符合 150 類預期(cf. Context 8ep 0.19 量級/59 類)。實測配速 6 epochs / 3h41m ≈
   **36.9 min/epoch**(9.7 it/s)→ 更新 ETA ≈ **19.1 h 總長,約 2026-07-12 13:00 完成**。
   epoch 6 進行中(avg_loss 4.82,GPU 93%/19.6GB)。下一定期回報 = epoch 10。
+- **epoch-10 檢查點(07-12 00:33 只讀核實)**:ep6→10 = 0.1029 / 0.1119 / 0.1136 / **0.1216**(ep9,
+  新 best,mtime 23:59)/ 0.1212。持續上升,無異常;epoch 11 進行中(10.9 it/s,GPU 90%)。
+  11 epochs / 6h38m ≈ 36.2 min/epoch,ETA 維持 ≈ 07-12 13:00 前後。下一定期回報 = epoch 15。
 - **訓練期間禁止其他 GPU 實驗。** 完成後:formal test(PD 0.85)→ §8.2 固定 battery
   (base/flip/SFP gen/entgate/DTLR-only 各含 flip + diagnostics + runtime + flagged-fraction)
   → §8.3 H1/H2 判定;數字 4 位小數進 index + csv。訓練產物勿覆蓋;下一 session 先查
