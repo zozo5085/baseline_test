@@ -205,3 +205,55 @@ datasets for the sole clean dataset-agnostic operator).
   datapoints only.
 - All numbers verbatim 4 decimals into `JOURNAL_EXPERIMENT_INDEX.md` + `method_results.csv`
   regardless of outcome.
+
+### 8.4 Pre-run Amendment (2026-07-11, before ADE training/evaluation)
+
+Append-only amendment. Written BEFORE any ADE model has been trained and BEFORE any ADE
+segmentation mIoU exists (item 7 below). §8.1 hypotheses, §8.2 battery, and §8.3 success
+criteria are **unchanged in full** (item 8).
+
+1. **Data-integrity gate: COMPLETED.** Class order (repo `ade_classes` == objectInfo150,
+   0/150 mismatches), GT value range 0..150, text-embedding recipe verified against the
+   shipped VOC weights, CLIP top1-in-GT 0.527 (~8x random). Evidence:
+   `docs/ADE20K_PSEUDO_COMPARISON.md` + commits `890007b`, `70c24b3`.
+2. **Old external pseudo file is DATA LEAKAGE.**
+   `D:\ReCLIPPP2026\text\ade_pseudo_label.json` = GT-derived top-5 presence labels
+   = invalid for unsupervised experiments. Banned from all formal / unsupervised training.
+   (Also: the repo-shipped `text/ade_pseudo_label_ReCLIPPP.json` is order-broken on this
+   machine — recall 0.235, shift-invariant — and equally unusable.)
+3. **Official training input = locally regenerated `text/ade_pseudo_label.json`**
+   (20210 lines, class idx 0..149, 0 empty/parse failures, full-set aligned GT recall
+   0.583 as a post-hoc diagnostic; validation table in `docs/ADE20K_PSEUDO_COMPARISON.md`).
+4. **Pseudo-label provenance**: generated ONLY from frozen CLIP ViT-B/16 image/text
+   features (sliding-window crop voting against `text/ade_ViT16_clip_text.pth`);
+   GT annotations were read only AFTER each label list was written, exclusively for
+   integrity diagnostics (code audit in `docs/ADE20K_PSEUDO_COMPARISON.md`,
+   `tools/ade_pseudo_regen.py:95-104`).
+5. **`time.sleep(0.08)` removed from `tools/train.py`** (line 151 of the pre-amendment
+   file). Reason: it is a pure per-iteration wall-clock delay (~27 min/epoch at ADE's
+   20210 images); it touches no RNG state and no tensor computation.
+6. **This change alters NO numerics**: image order, batch size, shuffle policy,
+   augmentation, model architecture, loss, optimizer, LR schedule, epoch count,
+   checkpoint selection, and evaluation protocol are all untouched.
+7. **Timing attestation**: at the moment this amendment is committed, no ADE model has
+   been trained in this repo and no ADE segmentation mIoU (of any arm) has been produced.
+8. **§8.1 / §8.2 / §8.3 are unchanged** — hypotheses, frozen profile, PD rule, battery,
+   endpoints, and the anti-rescue clause all stand exactly as pre-registered.
+9. **Random seed fixed = 0** (none was set before this amendment): Python `random`,
+   NumPy, `torch.manual_seed`, `torch.cuda.manual_seed_all`, plus DataLoader determinism
+   via `generator=torch.Generator().manual_seed(0)` and a `worker_init_fn` deriving
+   per-worker seeds from `torch.initial_seed()` (NUM_WORKERS 4 unchanged). cuDNN
+   algorithm-selection flags are NOT changed (forcing deterministic kernels would alter
+   the numerics/perf envelope relative to the Context run).
+10. **Reproducibility record**:
+    - pseudo-label `text/ade_pseudo_label.json` SHA256
+      `1255492DD3095B895DF598B126F172707BF79E532E4505C67295549EF2865BB6`
+    - config `config/ade_train_converged_cfg.yaml` SHA256
+      `88413186D9BEEC554BB4A382323D044E5D178E0EC6947B325158B2536CEA232C`
+    - repo HEAD when this amendment was written: `70c24b3`; the training source snapshot
+      = the commit CONTAINING this amendment ("ADE20K pre-run protocol amendment and
+      reproducible training snapshot"), whose hash is recorded at launch in
+      `experiments/ade_vanilla_converged/launch_info.txt` and `docs/SESSION_HANDOFF.md`.
+    - environment: conda env `reclip5090`, Python 3.10.19,
+      torch 2.11.0.dev20260214+cu128, CUDA 12.8, NVIDIA GeForce RTX 5090 (32 GB),
+      Windows 10; launch command recorded in `launch_info.txt`.

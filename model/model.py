@@ -238,8 +238,21 @@ class TextEncoder(nn.Module):
         self.weight = False
 
         if not training:
-            # prompt_token = torch.load(cfg.LOAD_PATH)['text_encoder.prompt_token']
-            prompt_token = torch.load(cfg.LOAD_PATH)['module.text_encoder.prompt_token']
+            if isinstance(device, int):
+                load_location = f"cuda:{device}" if torch.cuda.is_available() else "cpu"
+            else:
+                load_location = device
+            state = torch.load(cfg.LOAD_PATH, map_location=load_location, weights_only=False)
+            if isinstance(state, dict) and "state_dict" in state:
+                state = state["state_dict"]
+            if isinstance(state, dict) and "model_state_dict" in state:
+                state = state["model_state_dict"]
+            if "module.text_encoder.prompt_token" in state:
+                prompt_token = state["module.text_encoder.prompt_token"]
+            elif "text_encoder.prompt_token" in state:
+                prompt_token = state["text_encoder.prompt_token"]
+            else:
+                raise KeyError("Checkpoint missing text_encoder.prompt_token")
             self.prompt_token = nn.Parameter(prompt_token, requires_grad=False)
 
     def forward(self, cls_name_token):

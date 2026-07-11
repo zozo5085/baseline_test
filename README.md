@@ -1,4 +1,38 @@
 # ReCLIP & ReCLIP++
+
+### C-USS Trainable Feature Fusion
+
+This fork keeps the original ReCLIP++ CLIP-Unsupervised Semantic Segmentation
+pipeline and its bias rectification path. The added feature-fusion experiment
+collects CLIP ViT layer 6/9/12 feature maps, fuses them with a lightweight
+DFF/FPN-style trainable module, and then feeds the fused visual feature into the
+same projection, bias-logit subtraction, and decoder flow used by ReCLIP++.
+The CLIP backbone remains frozen; the new fusion module is trained together
+with the original rectification-stage trainable components.
+
+Example commands:
+
+```python
+python tools/train.py --cfg config/voc_train_feature_fusion_cfg.yaml --model RECLIPPP --model_module model.model_feature_fusion
+python tools/test.py --cfg config/voc_test_feature_fusion_cfg.yaml --model RECLIPPP --model_module model.model_feature_fusion
+python tools/dump_feature_maps.py --cfg config/voc_test_feature_fusion_cfg.yaml --model_module model.model_feature_fusion --fusion_mode trainable_fusion --checkpoint experiments/voc_cuss_feature_fusion/best_weight.pth --out_dir experiments/feature_maps_cuss
+```
+
+The default feature-fusion config now runs the DFF2d ablation:
+
+```python
+python tools/train.py --cfg config/voc_train_feature_fusion_cfg.yaml --model RECLIPPP --model_module model.model_feature_fusion
+python tools/test.py --cfg config/voc_test_feature_fusion_cfg.yaml --model RECLIPPP --model_module model.model_feature_fusion
+python tools/dump_feature_maps.py --cfg config/voc_test_feature_fusion_cfg.yaml --model_module model.model_feature_fusion --fusion_mode dff2d --checkpoint experiments/voc_dff2d_fusion/best_weight.pth --out_dir experiments/feature_maps_dff2d
+```
+
+For the class-hallucination ablation, use:
+
+```python
+python tools/train.py --cfg config/voc_train_dff2d_classgate_cfg.yaml --model RECLIPPP --model_module model.model_feature_fusion
+python tools/test.py --cfg config/voc_test_dff2d_classgate_cfg.yaml --model RECLIPPP --model_module model.model_feature_fusion
+python tools/dump_feature_maps.py --cfg config/voc_test_dff2d_classgate_cfg.yaml --model_module model.model_feature_fusion --fusion_mode dff2d --class_gate --checkpoint experiments/voc_dff2d_classgate/best_weight.pth --out_dir experiments/feature_maps_dff2d_classgate
+```
 This is the Pytorch Implementation for CVPR 2024  paper: [Learn to Rectify the Bias of CLIP for Unsupervised Semantic Segmentation](https://openaccess.thecvf.com/content/CVPR2024/papers/Wang_Learn_to_Rectify_the_Bias_of_CLIP_for_Unsupervised_Semantic_CVPR_2024_paper.pdf) and the extended version of the conference paper: [ReCLIP++: Learn to Rectify the Bias of CLIP for Unsupervised Semantic Segmentation](https://arxiv.org/abs/2408.06747).
 
 

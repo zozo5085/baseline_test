@@ -53,7 +53,9 @@ def total_intersect_and_union(results,
                               num_classes,
                               ignore_index,
                               label_map=dict(),
-                              reduce_zero_label=False):
+                              reduce_zero_label=False,
+                              verbose=False,
+                              log_interval=100):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     total_area_intersect = torch.zeros((num_classes,), dtype=torch.float64).to(device)
     total_area_union = torch.zeros((num_classes,), dtype=torch.float64).to(device)
@@ -70,7 +72,8 @@ def total_intersect_and_union(results,
         total_area_pred_label += area_pred_label
         total_area_label += area_label
         id += 1
-        print('iou: img_idx:{}'.format(id))
+        if verbose and (id % log_interval == 0 or id == len(results)):
+            print('iou: {}/{}'.format(id, len(results)))
     return total_area_intersect, total_area_union, total_area_pred_label, \
         total_area_label
 
@@ -125,11 +128,13 @@ def eval_metrics(results,
                  nan_to_num=None,
                  label_map=dict(),
                  reduce_zero_label=False,
-                 beta=1):
+                 beta=1,
+                 verbose=False,
+                 log_interval=100):
     total_area_intersect, total_area_union, total_area_pred_label, \
         total_area_label = total_intersect_and_union(
         results, gt_seg_maps, num_classes, ignore_index, label_map,
-        reduce_zero_label)
+        reduce_zero_label, verbose=verbose, log_interval=log_interval)
     ret_metrics = total_area_to_metrics(total_area_intersect, total_area_union,
                                         total_area_pred_label,
                                         total_area_label, metrics, nan_to_num,
@@ -144,7 +149,9 @@ def mean_iou(results,
              ignore_index,
              nan_to_num=None,
              label_map=dict(),
-             reduce_zero_label=False):
+             reduce_zero_label=False,
+             verbose=False,
+             log_interval=100):
     iou_result = eval_metrics(
         results=results,
         gt_seg_maps=gt_seg_maps,
@@ -153,5 +160,7 @@ def mean_iou(results,
         metrics=['mIoU'],
         nan_to_num=nan_to_num,
         label_map=label_map,
-        reduce_zero_label=reduce_zero_label)
+        reduce_zero_label=reduce_zero_label,
+        verbose=verbose,
+        log_interval=log_interval)
     return iou_result
