@@ -1,0 +1,46 @@
+{
+  "cfg": "config\\ade_test_local_cfg.yaml",
+  "base": "experiments\\ade_conv_eval\\base_notta",
+  "images": 2000,
+  "n_boot": 10000,
+  "seed": 0,
+  "base_miou": 0.13318445023627062,
+  "variants": {
+    "flip": {
+      "pred_dir": "experiments\\ade_conv_eval\\base_flip",
+      "miou": 0.13352688370479263,
+      "delta": 0.00034243346852200207,
+      "ci95": [
+        -0.0026864851018169023,
+        0.001957590327604176
+      ],
+      "p_one_sided_le0": 0.4274,
+      "p_one_sided_ge0": 0.5726,
+      "p_two_sided": 0.8548
+    },
+    "sfp_gen": {
+      "pred_dir": "experiments\\ade_conv_eval\\sfp_notta",
+      "miou": 0.12322019025499505,
+      "delta": -0.009964259981275578,
+      "ci95": [
+        -0.012996202591975205,
+        -0.006042170657543818
+      ],
+      "p_one_sided_le0": 1.0,
+      "p_one_sided_ge0": 0.0,
+      "p_two_sided": 0.0
+    },
+    "dtlr_only": {
+      "pred_dir": "experiments\\ade_conv_eval\\dtlronly_notta",
+      "miou": 0.12503423982413286,
+      "delta": -0.00815021041213776,
+      "ci95": [
+        -0.010893493705901506,
+        -0.004392128793952049
+      ],
+      "p_one_sided_le0": 1.0,
+      "p_one_sided_ge0": 0.0,
+      "p_two_sided": 0.0
+    }
+  }
+}

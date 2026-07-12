@@ -6,7 +6,28 @@
 
 ---
 
-## ✅ 2026-07-12 11:14 — ADE20K base training 完成(最新狀態,先讀這裡)
+## 🏁 2026-07-12 — ADE20K battery 完成:H1 REFUTED、H2 幅度≈0(最新狀態,先讀這裡)
+
+- **Battery 全 8 arms 完成**(PD 0.85,gate 過:base 0.1332 ≥ 0.01;全 arm 同 ep24 ckpt):
+  base **0.1332** / flip 0.1335(+0.0003,p=0.8548 n.s.)/ SFP gen 0.1232(−0.0100,p<0.0002)/
+  gen+flip 0.1238 / entgate 0.1252(−0.0080)/ entgate+flip 0.1257 /
+  **DTLR-only 0.1250(−0.0082,CI[−0.0109,−0.0044],p<0.0002)**/ DTLR-only+flip 0.1253。
+- **§8.3 判定(預註冊,protocol §8.5 已記 outcome)**:**H1 REFUTED**(DTLR-only 顯著為負 →
+  線關閉、formal negative、Context +0.0010 = post-hoc 巧合、不得 component rescue);
+  **H2** 符號正但 n.s. → flip 主張縮限為「3/3 非負、2/3 顯著正」;full SFP/entgate 負 =
+  audit-only(反 rescue 條款),Context 降級結論被第三資料集加固。
+- **審計新發現**:「失敗定位於 CP-SFP rewrite」不延伸到 ADE——DTLR-only ≈ entgate ≈ full 皆負,
+  細粒度標籤空間連 edge-aware 平滑都侵蝕(diag:DTLR-only small-obj 0.1321 vs base 0.1420);
+  flagged-mass 單調鏈 VOC→Context→ADE:unrel_ent 0.32→0.68→0.77、proxy 支撐 0.99→0.74→0.50。
+- **全部溯源**:index **§12(a–d)**(8 arms + diag + flagged/runtime + bootstrap)+ csv 8 列 +
+  `journal_logs/ade_{battery_arm1_base,battery_RUN,diag_bootstrap,stats_bench}.log` +
+  `bootstrap_significance/ade.json` + `sfp_stats_extract/ade_gen.json`。
+- **下一步(等使用者)**:①期刊 Table I/II/III 現在 3/5 資料集、Table IV 可加 ADE 列——tex 更新
+  (含 flip 主張改寫 + ADE 段落 + 三資料集 flagged-fraction 表)屬大改,建議下個 session 專門做;
+  ②bootstrap 顯著性句(VOC/Context/ADE 一起)進 tex;③Q1-Q3 圖(可選)。**勿再跑任何 SFP/DTLR
+  變體——兩個假說線都已依預註冊關閉。**
+
+## ✅(已完成)2026-07-12 11:14 — ADE20K base training 完成
 
 - **完成核實(只讀)**:31/31 epochs(0–30),PID 39708 正常退出,console.log 乾淨收尾
   (`finish with 2000/2000`,無 traceback),GPU 已釋放。總 wall time **17h19m51s**

@@ -289,3 +289,28 @@ criteria are **unchanged in full** (item 8).
 - Completeness note (verifier claim-3 caveat): the string `ReCLIPPP2026` appears in
   `tools/ade_pseudo_compare.py`'s docstring solely as the `--old` usage example of the
   ban-verification tool itself; it is not a load path in any training code or config.
+
+### 8.5 OUTCOME (2026-07-12) — endpoints resolved exactly as pre-registered
+
+Base trained (ep24 best, per-epoch val 0.1305, 17h20m, seed 0); battery run per §8.2 on
+full val 2000, PD 0.85 (baseline 0.1332 ≥ 0.01 → no fallback, decided from the baseline
+alone). All numbers verbatim in `JOURNAL_EXPERIMENT_INDEX.md §12` + `method_results.csv`;
+logs in `experiments/journal_logs/ade_*`.
+
+- **H1: REFUTED.** DTLR-only no-TTA 0.1250, delta **−0.0082** vs base 0.1332; paired
+  bootstrap (10k, seed 0) CI [−0.0109, −0.0044], p < 0.0002 — significantly negative.
+  Per §8.3: the DTLR-only line is **closed**, recorded as a formal negative; Context's
+  +0.0010 is confirmed post-hoc noise; **no component-level rescue attempts** follow.
+- **H2: sign positive, magnitude ≈ 0.** flip 0.1335, delta +0.0003, CI [−0.0027, +0.0020],
+  p = 0.8548. Honest claim going forward: flip-TTA is **non-negative on 3/3** datasets and
+  significantly positive on 2/3 (VOC +0.0065, Context +0.0061); the "similar magnitude"
+  phrasing must be narrowed to non-negativity — ADE adds a boundary/FP improvement that
+  nets to ~zero (diagnostics: bnd 0.7375→0.7340, FP 4.09→3.41, small-obj 0.1420→0.1396).
+- **Anti-rescue clause applied:** full SFP gen −0.0100 (p<0.0002) and entgate −0.0080 —
+  audit datapoints only; the §6/§6b downgrade stands, now reinforced by a third dataset.
+- **New audit finding:** the Context-derived localization ("failure = CP-SFP rewrite;
+  DTLR alone harmless") does NOT extend to ADE: DTLR-only (−0.0082) ≈ entgate (−0.0080)
+  ≈ full (−0.0100), and DTLR-only's diagnostics are near-identical to full SFP
+  (small-obj 0.1321 vs 0.1327). On a 150-class fine-grained label space the entire
+  purification family erodes structure; the flagged-mass chain is monotone
+  (unrel_ent 0.32→0.68→0.77; proxy support 0.99→0.74→0.50 across VOC→Context→ADE).

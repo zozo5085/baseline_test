@@ -1,0 +1,28 @@
+===== ADE BATTERY (arms 2-8) START =====
+
+2026年7月12日 下午 06:25:25
+### A2 base flip ###
+finish with 2000/2000
+the mIOU:0.1335
+### A3 SFP gen no-TTA ###
+finish with 2000/2000
+the mIOU:0.1232
+### A4 SFP gen flip ###
+finish with 2000/2000
+the mIOU:0.1238
+### A5 entgate no-TTA ###
+finish with 2000/2000
+the mIOU:0.1252
+### A6 entgate flip ###
+finish with 2000/2000
+the mIOU:0.1257
+### A7 DTLR-only no-TTA (H1 arm) ###
+finish with 2000/2000
+the mIOU:0.1250
+### A8 DTLR-only flip ###
+finish with 2000/2000
+the mIOU:0.1253
+===== ADE BATTERY DONE =====
+2026年7月12日 下午 06:50:54
+
+

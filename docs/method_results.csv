@@ -43,3 +43,11 @@ voc_pamr_token_1iter,PAMR token-grid 1 iter(同 SFP 掛點),test-time,0.8128,for
 voc_pamr_token_3iter,PAMR token-grid 3 iter,test-time,0.7250,formal_test,experiments/voc_pamr_token_iter3_eval/,2026-07-07,[NEGATIVE diagnostic] -0.1286
 voc_pamr_token_10iter,PAMR token-grid 10 iter,test-time,0.5843,formal_test,experiments/voc_pamr_official_eval/,2026-07-07,[NEGATIVE diagnostic] -0.2693;appearance diffusion 隨迭代單調惡化
 voc_pamr_identity_0iter,PAMR NUM_ITER=0 identity 驗證,test-time,0.8536,formal_test,experiments/diag_pamr_identity/,2026-07-07,[SANITY] == baseline 精確;wrapper 無副作用
+ade_conv_baseline_noTTA,ADE20K converged base(ep24)formal no-TTA,test-time,0.1332,formal_ade,experiments/ade_conv_eval/base_notta/,2026-07-12,[FORMAL] PD 0.85 gate 通過(>=0.01 無 fallback);per-epoch val 0.1305 之 formal 對應;ckpt experiments/ade_vanilla_converged/best_weight.pth
+ade_conv_baseline_flip,ADE20K base + flip-TTA,test-time,0.1335,formal_ade,experiments/ade_conv_eval/base_flip/,2026-07-12,[FORMAL] +0.0003 vs base;bootstrap CI[-0.0027 +0.0020] p=0.8548 不顯著 → flip 於 ADE 幅度≈0(H2 符號為正但無統計支持);3/3 資料集非負、2/3 顯著
+ade_conv_SFP_gen_noTTA,ADE20K agnostic SFP/DTLR gen no-TTA,test-time,0.1232,formal_ade,experiments/ade_conv_eval/sfp_notta/,2026-07-12,[FORMAL negative] -0.0100 vs base p<0.0002;audit-only 依反 rescue 條款;第三資料集確認不泛化
+ade_conv_SFP_gen_flip,同上 + flip,test-time,0.1238,formal_ade,experiments/ade_conv_eval/sfp_flip/,2026-07-12,[FORMAL negative] -0.0097 vs flip base
+ade_conv_entgate_noTTA,ADE20K SFP + entropy-gate no-TTA,test-time,0.1252,formal_ade,experiments/ade_conv_eval/entgate_notta/,2026-07-12,[FORMAL negative] -0.0080 vs base;gate 只回收 ~1/5 損失(-0.0100→-0.0080)與 Context 模式一致
+ade_conv_entgate_flip,同上 + flip,test-time,0.1257,formal_ade,experiments/ade_conv_eval/entgate_flip/,2026-07-12,[FORMAL negative] -0.0078 vs flip base
+ade_conv_DTLRonly_noTTA,ADE20K selection+DTLR-only(--sfp_disable cpsfp)= H1 arm,test-time,0.1250,formal_ade,experiments/ade_conv_eval/dtlronly_notta/,2026-07-12,[FORMAL negative ★H1 REFUTED] -0.0082 vs base;bootstrap CI[-0.0109 -0.0044] p<0.0002 顯著為負 → 預註冊 §8.3:DTLR-only 線關閉;Context +0.0010 確認為 post-hoc 巧合;不得再做 component rescue
+ade_conv_DTLRonly_flip,同上 + flip,test-time,0.1253,formal_ade,experiments/ade_conv_eval/dtlronly_flip/,2026-07-12,[FORMAL negative] -0.0082 vs flip base

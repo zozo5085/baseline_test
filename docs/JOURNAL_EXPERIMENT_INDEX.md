@@ -167,3 +167,68 @@ Tool `tools/bootstrap_significance.py`(per-image intersect/union 可加性 → p
 
 四個 headline delta 全部顯著:flip 兩資料集顯著為正;SFP gen VOC 顯著為正、Context 顯著為負
 (= audit 結論的統計背書)。尚未寫進 tex(建議一句 significance 註記,見 handoff 下一步)。
+
+## 12. ADE20K formal core(2026-07-12;第三資料集,§8 預註冊 battery)
+
+Base:`experiments/ade_vanilla_converged/best_weight.pth`(**epoch 24**,per-epoch val 0.1305,
+EPOCH 30 recipe = Context converged 同款,seed 0,sleep 已除;train cfg
+`config/ade_train_converged_cfg.yaml`,snapshot commit `60c14e9`,launch 記錄
+`experiments/ade_vanilla_converged/launch_info.txt`,訓練 17h20m,curve 31 點見 handoff)。
+Eval:`tools/test_tta.py`,PD 0.85(**gate:baseline 0.1332 ≥ 0.01 → 無 fallback,全 arm PD 0.85**),
+full val 2000,全部同一 ckpt;battery log `journal_logs/ade_battery_arm1_base.log` +
+`ade_battery_RUN.log`;configs commit `fe5a479`(先於一切 formal 數字)。
+
+| # | Method | mIoU | Δ | class | config | save_dir | main table? |
+|---|---|---|---|---|---|---|---|
+| D1 | baseline no-TTA | 0.1332 | — | formal | `config/ade_test_local_cfg.yaml` | `experiments/ade_conv_eval/base_notta/` | ✅ I |
+| D2 | baseline + flip | 0.1335 | +0.0003(n.s.,p=0.8548) | formal | 同上 + `--flip` | `.../base_flip/` | ✅ II |
+| D3 | SFP gen no-TTA | 0.1232 | −0.0100(p<0.0002) | formal(negative,audit-only) | `config/ade_test_sfp_dtlr_gen_cfg.yaml` | `.../sfp_notta/` | ✅ I |
+| D4 | SFP gen + flip | 0.1238 | −0.0097 vs flip base | formal(negative) | 同上 + `--flip` | `.../sfp_flip/` | ✅ II |
+| D5 | entgate no-TTA | 0.1252 | −0.0080 | formal(negative) | `config/ade_test_sfp_dtlr_entgate_cfg.yaml` | `.../entgate_notta/` | ✅ III |
+| D6 | entgate + flip | 0.1257 | −0.0078 vs flip base | formal(negative) | 同上 + `--flip` | `.../entgate_flip/` | ✅ II/III |
+| D7 | **DTLR-only no-TTA(H1)** | 0.1250 | **−0.0082(p<0.0002)** | formal(negative)**★H1 REFUTED** | gen cfg + `--sfp_disable cpsfp` | `.../dtlronly_notta/` | ✅ IV(ADE 列) |
+| D8 | DTLR-only + flip | 0.1253 | −0.0082 vs flip base | formal(negative) | 同上 + `--flip` | `.../dtlronly_flip/` | — |
+
+**§8.3 預註冊判定(2026-07-12)**:
+- **H1 REFUTED**:DTLR-only delta −0.0082 ≤ 0 且 bootstrap 顯著為負(CI[−0.0109,−0.0044],
+  p<0.0002)→ DTLR-only 線**關閉**,記 formal negative;Context 的 +0.0010 確認為 post-hoc 巧合
+  (預註冊防升格機制發揮作用);依條款不再做任何 component-level rescue。
+- **H2**:符號為正(+0.0003)→ 字面上 3/3 非負;但 p=0.8548、CI 跨 0 → 誠實表述 = **flip-TTA
+  3/3 資料集不傷、2/3(VOC/Context)顯著為正、ADE 幅度≈0**。「same sign similar magnitude」
+  主張需縮限為 non-negative。
+- **反 rescue**:full SFP −0.0100 / entgate −0.0080 皆顯著為負 = 第三資料集 audit 數據,
+  Context 降級結論加固。
+- **審計新發現**:Table IV 的「失敗定位於 CP-SFP rewrite」**不延伸到 ADE** —— ADE 上 DTLR-only
+  (−0.0082)≈ entgate(−0.0080)≈ full(−0.0100),連 edge-aware 平滑本身都在細粒度標籤空間
+  侵蝕結構(見 §12b diagnostics:DTLR-only small-obj 0.1321 vs base 0.1420)。
+
+### 12b. ADE diagnostics(N=1000,stride 2;log `journal_logs/ade_diag_bootstrap.log`)
+
+| Setting | bnd err ↓ | small-obj ↑ | FP cls/img ↓ |
+|---|---|---|---|
+| base / +flip | 0.7375 / 0.7340 | 0.1420 / 0.1396 | 4.0870 / 3.4080 |
+| SFP gen / DTLR-only | 0.7449 / 0.7458 | 0.1327 / 0.1321 | 3.0180 / 3.0220 |
+
+flip:邊界+FP 改善、small-obj 微蝕 → 淨 ≈ 0(似 VOC 型,非 Context 型);SFP/DTLR-only:FP 大降
+(4.09→3.02)但邊界與 small-obj 齊蝕 → 淨負,且兩者幾乎同值(rewrite 有無不再是差異主因)。
+
+### 12c. ADE flagged-fraction + runtime(logs `ade_stats_bench.log`;json `sfp_stats_extract/ade_gen.json`)
+
+| stat | VOC(C=20) | Context(C=59) | ADE(C=150) |
+|---|---|---|---|
+| unrel_frac_conf / ent | 0.3465 / 0.3168 | 0.7254 / 0.6818 | **0.8081 / 0.7669** |
+| rewrite ratio(capped) | 0.2605 | 0.5444 | **0.6064** |
+| proxy_available_ratio | 0.9932 | 0.7433 | **0.5008** |
+| h_norm_mean | 0.0890 | 0.2933 | 0.3517 |
+
+單調惡化鏈完整:類別數/難度 ↑ → 被旗標 token ↑、proxy 支撐 ↓(0.99→0.74→0.50)→ 侵蝕主導。
+Runtime(RTX 5090,batch1,50-img):base 48.9ms/20.4FPS、+flip 98.3、SFP 68.7、SFP+flip 114.9、
+entgate 56.7;peakVRAM ≤1044MiB;全 test-time 0 params。
+
+### 12d. ADE bootstrap(10k,seed 0;json `bootstrap_significance/ade.json`;base 0.1332 逐字重現)
+
+| comparison | delta | 95% CI | p(two-sided) |
+|---|---|---|---|
+| flip − base | +0.0003 | [−0.0027, +0.0020] | 0.8548(n.s.) |
+| SFP gen − base | −0.0100 | [−0.0130, −0.0060] | <0.0002 |
+| DTLR-only − base | −0.0082 | [−0.0109, −0.0044] | <0.0002 |

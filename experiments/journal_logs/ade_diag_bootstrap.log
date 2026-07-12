@@ -1,0 +1,28 @@
+--- DIAG (ADE, C=150, stride 2) ---
+[ADE base no-TTA] N=1000 miss_gt=0
+  boundary_band_error = 0.7375  (band_r=3)
+  small_object_acc    = 0.1420  (T<1024px)
+  fp_class_count_img  = 4.0870
+[ADE base flip] N=1000 miss_gt=0
+  boundary_band_error = 0.7340  (band_r=3)
+  small_object_acc    = 0.1396  (T<1024px)
+  fp_class_count_img  = 3.4080
+[ADE SFP gen no-TTA] N=1000 miss_gt=0
+  boundary_band_error = 0.7449  (band_r=3)
+  small_object_acc    = 0.1327  (T<1024px)
+  fp_class_count_img  = 3.0180
+[ADE DTLR-only no-TTA] N=1000 miss_gt=0
+  boundary_band_error = 0.7458  (band_r=3)
+  small_object_acc    = 0.1321  (T<1024px)
+  fp_class_count_img  = 3.0220
+--- BOOTSTRAP (paired, 10k, seed 0) ---
+
+images=2000 num_classes=150(+1 bins) reduce_zero_label=True
+[base] observed mIoU = 0.1332
+  mIoU=0.1335 delta=+0.0003 95%CI=[-0.0027, +0.0020] p(two-sided)=0.8548
+  mIoU=0.1232 delta=-0.0100 95%CI=[-0.0130, -0.0060] p(two-sided)=<0.0002
+  mIoU=0.1250 delta=-0.0082 95%CI=[-0.0109, -0.0044] p(two-sided)=<0.0002
+written: experiments\bootstrap_significance\ade.json
+--- CPU CHAIN DONE ---
+
+
