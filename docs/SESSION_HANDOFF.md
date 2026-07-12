@@ -44,6 +44,9 @@
 - **epoch-20 檢查點(07-12 05:55 只讀核實)**:ep16→20 = 0.1112 / 0.1161 / 0.1169 / 0.1230 / 0.1168。
   best 仍 ep12 **0.1247**。平台 0.11–0.123 抖動,無異常;epoch 21 進行中(11.1 it/s,GPU 92%)。
   剩 10 epochs,ETA 前後不變。下一定期回報 = epoch 25。
+- **epoch-25 檢查點(07-12 08:34 只讀核實)**:ep21→25 = 0.1175 / 0.1152 / 0.1251 / **0.1305**
+  (ep24,新 best,mtime 08:01,突破平台)/ 0.1190。epoch 26 進行中(11.0 it/s,GPU 91%)。
+  下一通知 = **訓練完成**(31/31 val)或異常。
 - **訓練期間禁止其他 GPU 實驗。** 完成後:formal test(PD 0.85)→ §8.2 固定 battery
   (base/flip/SFP gen/entgate/DTLR-only 各含 flip + diagnostics + runtime + flagged-fraction)
   → §8.3 H1/H2 判定;數字 4 位小數進 index + csv。訓練產物勿覆蓋;下一 session 先查
