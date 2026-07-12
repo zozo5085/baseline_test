@@ -6,7 +6,27 @@
 
 ---
 
-## 🔴 2026-07-11 17:53 — ADE20K base training 執行中(最新狀態,先讀這裡)
+## ✅ 2026-07-12 11:14 — ADE20K base training 完成(最新狀態,先讀這裡)
+
+- **完成核實(只讀)**:31/31 epochs(0–30),PID 39708 正常退出,console.log 乾淨收尾
+  (`finish with 2000/2000`,無 traceback),GPU 已釋放。總 wall time **17h19m51s**
+  (17:52:59 → 11:12:50,平均 ~33.5 min/epoch,尾段加速到 11.35 it/s)。
+- **best = epoch 24,per-epoch val mIoU 0.1305**(`best_weight.pth` 610,582,283 bytes,
+  mtime 07-12 08:01:21;其後 ep25–30 = 0.1190/0.1203/0.1188/0.1256/0.1206/0.1216 皆未超越)。
+  完整 31 點曲線:0.0431 0.0874 0.0861 0.1015 0.0970 0.1015 0.1029 0.1119 0.1136 0.1216 0.1212
+  0.1220 0.1247 0.1213 0.1201 0.1161 0.1112 0.1161 0.1169 0.1230 0.1168 0.1175 0.1152 0.1251
+  **0.1305** 0.1190 0.1203 0.1188 0.1256 0.1206 0.1216。
+- 注意:per-epoch val 系統性低於 formal test(VOC 同 ckpt 差 ~0.04);formal 數字以 §8.2 battery
+  為準。SAVE_DIR 內 2000 個 .pt = 最後 epoch 的 val 產物(非 formal preds,勿引用)。
+- **下一步 = §8.2 固定 battery(等使用者 go;預估 ~1.5–2h GPU)**,嚴格順序:
+  ①base no-TTA @ PD 0.85(**先看 baseline 是否 <0.01 觸發預註冊 PD 0.0 fallback——只由 baseline 決定**)
+  ②base+flip ③SFP gen ±flip ④entgate ±flip ⑤DTLR-only(`--sfp_disable cpsfp`)±flip = **H1 arm**
+  ⑥diag_metrics + bench_runtime + sfp_stats ⑦H1 bootstrap(DTLR-only vs base,10k,seed 0,
+  one-sided p<0.05)→ §8.3 判定。需新建 ade 的 SFP gen/entgate test cfgs(鏡像 context 版,
+  gen profile 常數凍結不動)。每 arm 新 SAVE_DIR `experiments/ade_conv_eval/<arm>/`。
+- 訓練期間三次早期 run 快照與雙輪 verifier 記錄 = `launch_info.txt`(本 dir)。
+
+## 🔴(已完成,保留記錄)2026-07-11 17:53 — ADE20K base training 啟動
 
 - **PID 39708**,started 2026-07-11 17:52:59,detached。指令:
   `C:\Users\NUTC2507\miniconda3\envs\reclip5090\python.exe tools/train.py --cfg config/ade_train_converged_cfg.yaml --model RECLIPPP`(cwd = D:\ReCLIPP_Test,單卡,seed 0)。
